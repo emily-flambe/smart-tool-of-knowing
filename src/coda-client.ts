@@ -73,6 +73,22 @@ export interface CodaRowsResponse {
   nextPageLink?: string;
 }
 
+export interface CodaUser {
+  name: string;
+  loginId: string;
+  type: string;
+  href: string;
+  tokenName: string;
+  scoped: boolean;
+  pictureLink: string;
+  workspace: {
+    id: string;
+    type: string;
+    browserLink: string;
+    name: string;
+  };
+}
+
 export class CodaClient {
   private client: AxiosInstance;
   private baseUrl = 'https://coda.io/apis/v1';
@@ -87,7 +103,7 @@ export class CodaClient {
     });
   }
 
-  async validateApiKey(): Promise<{ user: any }> {
+  async validateApiKey(): Promise<CodaUser> {
     try {
       const response = await this.client.get('/whoami');
       return response.data;

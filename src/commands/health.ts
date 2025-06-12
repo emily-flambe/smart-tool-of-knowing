@@ -104,16 +104,16 @@ async function checkCodaHealth(results: HealthCheckResult[]): Promise<void> {
     }
 
     const codaClient = new CodaClient(codaApiKey);
-    const user = await codaClient.validateApiKey();
+    const response = await codaClient.validateApiKey();
     const responseTime = Date.now() - startTime;
     
     spinner.stop();
     results.push({
       service: 'Coda API',
       status: 'healthy',
-      message: `Connected as ${user.user.name}`,
+      message: `Connected as ${response.name}`,
       responseTime,
-      details: `Email: ${user.user.email}, Type: ${user.user.type}`
+      details: `Email: ${response.loginId}, Type: ${response.type}`
     });
 
   } catch (error: any) {

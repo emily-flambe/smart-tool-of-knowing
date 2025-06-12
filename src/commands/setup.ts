@@ -174,7 +174,7 @@ export function createSetupCommand(): Command {
           const codaClient = new CodaClient(response.codaKey);
           const user = await codaClient.validateApiKey();
           spinner.stop();
-          console.log(chalk.green(`✓ Coda API key validated for ${user.user.name}`));
+          console.log(chalk.green(`✓ Coda API key validated for ${user.name}`));
           codaKey = response.codaKey;
         } catch (error) {
           console.log(chalk.red('✗ Invalid Coda API key - saving anyway for troubleshooting'));
