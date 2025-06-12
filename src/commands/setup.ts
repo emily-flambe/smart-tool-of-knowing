@@ -46,15 +46,17 @@ export function createSetupCommand(): Command {
       ]);
 
       // Validate Linear API key
+      let linearValidated = false;
       try {
         const spinner = ora('Validating Linear API key...').start();
         const linearClient = new LinearClient(linearApiKey);
         const viewer = await linearClient.validateApiKey();
         spinner.stop();
         console.log(chalk.green(`✓ Linear API key validated for ${viewer.name} (${viewer.email})`));
+        linearValidated = true;
       } catch (error) {
-        console.log(chalk.red('✗ Invalid Linear API key'));
-        return;
+        console.log(chalk.red('✗ Invalid Linear API key - continuing with setup'));
+        console.log(chalk.yellow('You can fix this later by running setup again or using team config set'));
       }
 
       // AI Provider Selection
@@ -175,8 +177,9 @@ export function createSetupCommand(): Command {
           console.log(chalk.green(`✓ Coda API key validated for ${user.user.name}`));
           codaKey = response.codaKey;
         } catch (error) {
-          console.log(chalk.red('✗ Invalid Coda API key - skipping Coda setup'));
-          codaKey = undefined;
+          console.log(chalk.red('✗ Invalid Coda API key - saving anyway for troubleshooting'));
+          console.log(chalk.yellow('You can test connectivity with: team health'));
+          codaKey = response.codaKey; // Save even if validation fails
         }
       }
 
@@ -190,6 +193,7 @@ export function createSetupCommand(): Command {
         if (anthropicKey) envValues.ANTHROPIC_API_KEY = anthropicKey;
         if (codaKey) envValues.CODA_API_KEY = codaKey;
         if (defaultProvider) envValues.DEFAULT_AI_PROVIDER = defaultProvider;
+
 
         envManager.writeEnvFile(envValues);
         console.log(chalk.green(`\n✅ Configuration saved to ${envManager.getEnvPath()}`));
