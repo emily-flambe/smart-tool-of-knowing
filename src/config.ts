@@ -3,6 +3,7 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import dotenv from 'dotenv';
+import { EnvManager } from './env-manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -23,6 +24,7 @@ interface Config {
 class ConfigManager {
   private store: Configstore;
   private packageInfo: any;
+  private envManager: EnvManager;
 
   constructor() {
     try {
@@ -33,6 +35,7 @@ class ConfigManager {
     }
     
     this.store = new Configstore(this.packageInfo.name);
+    this.envManager = new EnvManager();
   }
 
   getConfig(): Config {
@@ -49,45 +52,52 @@ class ConfigManager {
   }
 
   getLinearApiKey(): string | undefined {
-    return process.env.LINEAR_API_KEY || this.store.get('linearApiKey');
+    // Priority: .env file > environment variables > configstore
+    const envValues = this.envManager.readEnvFile();
+    return envValues.LINEAR_API_KEY || process.env.LINEAR_API_KEY || this.store.get('linearApiKey');
   }
 
   setLinearApiKey(apiKey: string): void {
-    this.store.set('linearApiKey', apiKey);
+    this.envManager.updateEnvFile({ LINEAR_API_KEY: apiKey });
   }
 
   getOpenAIApiKey(): string | undefined {
-    return process.env.OPENAI_API_KEY || this.store.get('openaiApiKey');
+    const envValues = this.envManager.readEnvFile();
+    return envValues.OPENAI_API_KEY || process.env.OPENAI_API_KEY || this.store.get('openaiApiKey');
   }
 
   setOpenAIApiKey(apiKey: string): void {
-    this.store.set('openaiApiKey', apiKey);
+    this.envManager.updateEnvFile({ OPENAI_API_KEY: apiKey });
   }
 
   getAnthropicApiKey(): string | undefined {
-    return process.env.ANTHROPIC_API_KEY || this.store.get('anthropicApiKey');
+    const envValues = this.envManager.readEnvFile();
+    return envValues.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || this.store.get('anthropicApiKey');
   }
 
   setAnthropicApiKey(apiKey: string): void {
-    this.store.set('anthropicApiKey', apiKey);
+    this.envManager.updateEnvFile({ ANTHROPIC_API_KEY: apiKey });
   }
 
   getCodaApiKey(): string | undefined {
-    return process.env.CODA_API_KEY || this.store.get('codaApiKey');
+    const envValues = this.envManager.readEnvFile();
+    return envValues.CODA_API_KEY || process.env.CODA_API_KEY || this.store.get('codaApiKey');
   }
 
   setCodaApiKey(apiKey: string): void {
-    this.store.set('codaApiKey', apiKey);
+    this.envManager.updateEnvFile({ CODA_API_KEY: apiKey });
   }
 
   getDefaultAiProvider(): 'openai' | 'anthropic' {
-    const envProvider = process.env.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
+    const envValues = this.envManager.readEnvFile();
+    const envProvider = envValues.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
+    const processProvider = process.env.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
     const storedProvider = this.store.get('defaultAiProvider') as 'openai' | 'anthropic';
-    return envProvider || storedProvider || 'openai';
+    return envProvider || processProvider || storedProvider || 'openai';
   }
 
   setDefaultAiProvider(provider: 'openai' | 'anthropic'): void {
-    this.store.set('defaultAiProvider', provider);
+    this.envManager.updateEnvFile({ DEFAULT_AI_PROVIDER: provider });
   }
 
   getDefaultSummaryType(): 'brief' | 'detailed' | 'action-items' {
@@ -146,11 +156,19 @@ class ConfigManager {
     const config = this.getConfig();
     return {
       ...config,
-      linearApiKey: config.linearApiKey ? '***' + config.linearApiKey.slice(-4) : undefined,
-      openaiApiKey: config.openaiApiKey ? '***' + config.openaiApiKey.slice(-4) : undefined,
-      anthropicApiKey: config.anthropicApiKey ? '***' + config.anthropicApiKey.slice(-4) : undefined,
-      codaApiKey: config.codaApiKey ? '***' + config.codaApiKey.slice(-4) : undefined,
+      linearApiKey: this.envManager.maskValue(config.linearApiKey),
+      openaiApiKey: this.envManager.maskValue(config.openaiApiKey),
+      anthropicApiKey: this.envManager.maskValue(config.anthropicApiKey),
+      codaApiKey: this.envManager.maskValue(config.codaApiKey),
     };
+  }
+
+  getEnvFilePath(): string {
+    return this.envManager.getEnvPath();
+  }
+
+  envFileExists(): boolean {
+    return this.envManager.envFileExists();
   }
 }
 

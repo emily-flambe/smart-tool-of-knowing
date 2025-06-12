@@ -52,12 +52,21 @@ npm run build
    - Generate a new API token
 
 4. **Configure the CLI**
+   
+   **Option A: Interactive Setup (Recommended)**
    ```bash
    team setup
    ```
+   The setup wizard will:
+   - Use existing values from your `.env` file as defaults
+   - Allow you to paste in new API keys
+   - Validate all API connections
+   - Save everything to a `.env` file in your project directory
    
-   Or manually create a `.env` file:
+   **Option B: Manual .env File**
+   Create a `.env` file in your project directory:
    ```env
+   # Team Knowledge CLI Configuration
    LINEAR_API_KEY=lin_api_your_key_here
    OPENAI_API_KEY=sk-your_openai_key_here
    ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
@@ -79,6 +88,9 @@ team setup
 # Check API health status
 team health
 team health --verbose
+
+# View current configuration
+team config show
 ```
 
 ### Linear Integration
@@ -254,7 +266,7 @@ team linear summarize issue LIN-456
 
 ## Configuration
 
-The CLI stores configuration in your home directory using `configstore`. You can also use environment variables:
+The CLI stores configuration in a `.env` file in your project directory. This file takes priority over environment variables and provides a clean, git-ignorable way to manage your API keys:
 
 ```env
 LINEAR_API_KEY=lin_api_your_key
@@ -262,6 +274,27 @@ OPENAI_API_KEY=sk-your_openai_key
 ANTHROPIC_API_KEY=sk-ant-your_anthropic_key
 CODA_API_KEY=your_coda_api_key
 DEFAULT_AI_PROVIDER=openai
+```
+
+### Configuration Priority
+
+The CLI reads configuration in this order:
+1. `.env` file in your project directory (highest priority)
+2. Environment variables
+3. Legacy configstore values (for backward compatibility)
+
+### Managing Configuration
+
+```bash
+# Interactive setup (creates/updates .env file)
+team setup
+
+# View current configuration and .env file location
+team config show
+
+# Manually update specific values (updates .env file)
+team config set --linear-key lin_api_new_key
+team config set --coda-key your_new_coda_key
 ```
 
 ### API Key Formats

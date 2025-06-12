@@ -23,6 +23,15 @@ function createShowCommand(): Command {
       
       console.log(chalk.blue('📋 Current Configuration:'));
       console.log();
+      
+      // Show .env file info
+      if (configManager.envFileExists()) {
+        console.log(chalk.green(`📄 Configuration file: ${configManager.getEnvFilePath()}`));
+      } else {
+        console.log(chalk.yellow('📄 No .env file found - using environment variables and defaults'));
+      }
+      console.log();
+      
       console.log(`Linear API Key: ${config.linearApiKey || chalk.red('Not set')}`);
       console.log(`OpenAI API Key: ${config.openaiApiKey || chalk.red('Not set')}`);
       console.log(`OpenAI Model: ${config.openaiModel || 'Default (gpt-4)'}`);
@@ -39,6 +48,9 @@ function createShowCommand(): Command {
         validation.missing.forEach(item => console.log(`  - ${item}`));
         console.log();
         console.log(chalk.blue('Run `team setup` to configure missing items.'));
+      } else {
+        console.log();
+        console.log(chalk.green('✅ All required configuration is set!'));
       }
     });
 }
