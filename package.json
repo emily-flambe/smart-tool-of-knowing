@@ -1,0 +1,55 @@
+{
+  "name": "smart-tool-of-knowing",
+  "version": "1.0.0",
+  "description": "CLI to track your team's Linear workspace activity with AI-powered summarization",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "team": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node --esm src/index.ts",
+    "test": "jest",
+    "lint": "eslint src/**/*.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.27.0",
+    "chalk": "^5.3.0",
+    "commander": "^11.0.0",
+    "configstore": "^7.0.0",
+    "dotenv": "^16.0.0",
+    "inquirer": "^9.2.12",
+    "node-fetch": "^3.3.0",
+    "openai": "^4.20.1",
+    "ora": "^7.0.1",
+    "table": "^6.8.1"
+  },
+  "devDependencies": {
+    "@types/configstore": "^6.0.2",
+    "@types/inquirer": "^9.0.3",
+    "@types/jest": "^29.5.5",
+    "@types/node": "^20.8.0",
+    "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@typescript-eslint/parser": "^6.7.4",
+    "eslint": "^8.50.0",
+    "jest": "^29.7.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "linear",
+    "cli",
+    "team",
+    "productivity",
+    "ai",
+    "summarization"
+  ],
+  "author": "",
+  "license": "MIT"
+}
