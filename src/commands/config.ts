@@ -2,12 +2,16 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import { configManager } from '../config.js';
+import { createSetupCommand } from './setup.js';
+import { createHealthCommand } from './health.js';
 
 export function createConfigCommand(): Command {
   const command = new Command('config');
   
   command
     .description('Manage configuration settings')
+    .addCommand(createSetupCommand().name('setup'))
+    .addCommand(createHealthCommand().name('check'))
     .addCommand(createShowCommand())
     .addCommand(createSetCommand())
     .addCommand(createClearCommand());
@@ -47,7 +51,7 @@ function createShowCommand(): Command {
         console.log(chalk.yellow('⚠️  Missing configuration:'));
         validation.missing.forEach(item => console.log(`  - ${item}`));
         console.log();
-        console.log(chalk.blue('Run `team setup` to configure missing items.'));
+        console.log(chalk.blue('Run `team config setup` to configure missing items.'));
       } else {
         console.log();
         console.log(chalk.green('✅ All required configuration is set!'));

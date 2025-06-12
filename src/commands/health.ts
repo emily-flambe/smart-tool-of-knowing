@@ -16,7 +16,7 @@ interface HealthCheckResult {
 }
 
 export function createHealthCommand(): Command {
-  const command = new Command('health');
+  const command = new Command('healthcheck');
   
   command
     .description('Check the health status of all configured APIs')
@@ -268,7 +268,7 @@ function displayHealthResults(results: HealthCheckResult[], verbose: boolean): v
   const totalConfigured = results.filter(r => r.status !== 'not_configured').length;
   
   if (!anyConfigured) {
-    console.log(chalk.yellow('⚠️  No APIs configured. Run `team setup` to get started.'));
+    console.log(chalk.yellow('⚠️  No APIs configured. Run `team config setup` to get started.'));
   } else if (allHealthy && totalConfigured === results.length) {
     console.log(chalk.green('🎉 All APIs are healthy and ready to use!'));
   } else if (healthyCount > 0) {
@@ -296,8 +296,7 @@ function displayHealthResults(results: HealthCheckResult[], verbose: boolean): v
     console.log();
     console.log(chalk.blue('💡 Optional integrations available:'));
     notConfigured.forEach(service => {
-      const command = service.service === 'Coda API' ? 'team setup' : 'team setup';
-      console.log(`   ${service.service}: Run \`${command}\` to configure`);
+      console.log(`   ${service.service}: Run \`team config setup\` to configure`);
     });
   }
 }

@@ -69,7 +69,7 @@ function createListModelsCommand(): Command {
       }
 
       if (!config.openaiApiKey && !config.anthropicApiKey) {
-        console.log(chalk.yellow('⚠️ No AI API keys configured. Run `team setup` first.'));
+        console.log(chalk.yellow('⚠️ No AI API keys configured. Run `team config setup` first.'));
       }
     });
 }
@@ -88,7 +88,7 @@ function createSelectModelCommand(): Command {
       const apiKey = provider === 'openai' ? config.openaiApiKey : config.anthropicApiKey;
       
       if (!apiKey) {
-        console.log(chalk.red(`❌ ${provider} API key not configured. Run \`team setup\` first.`));
+        console.log(chalk.red(`❌ ${provider} API key not configured. Run \`team config setup\` first.`));
         return;
       }
 

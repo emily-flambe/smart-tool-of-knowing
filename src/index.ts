@@ -5,14 +5,12 @@ import chalk from 'chalk';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { createSetupCommand } from './commands/setup.js';
 import { createConfigCommand } from './commands/config.js';
 import { createListCommand } from './commands/list.js';
 import { createSummarizeCommand } from './commands/summarize.js';
 import { createModelsCommand } from './commands/models.js';
 import { createPlanningCommand } from './commands/planning.js';
 import { createCodaCommand } from './commands/coda.js';
-import { createHealthCommand } from './commands/health.js';
 import { configManager } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,9 +32,7 @@ program
   .version(packageInfo.version);
 
 // Add commands
-program.addCommand(createSetupCommand());
 program.addCommand(createConfigCommand());
-program.addCommand(createHealthCommand());
 
 // Linear system commands
 const linearCommand = new Command('linear');
@@ -54,12 +50,31 @@ program.addCommand(createModelsCommand());
 
 // Add some aliases for backward compatibility
 program
+  .command('setup')
+  .description('Configure API keys (alias for team config setup)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team config setup'));
+  });
+
+program
+  .command('health')
+  .description('Check API health (alias for team config check)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team config check'));
+  });
+
+program
+  .command('healthcheck')
+  .description('Check API health (alias for team config check)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team config check'));
+  });
+
+program
   .command('cycles')
   .description('List current cycles (alias for team linear list cycles)')
   .action(async () => {
     console.log(chalk.yellow('This command has moved. Use: team linear list cycles'));
-    console.log('Or use the new structure:');
-    console.log(chalk.blue('  team linear list cycles'));
   });
 
 program
@@ -67,8 +82,6 @@ program
   .description('List issues (alias for team linear list issues)')
   .action(async () => {
     console.log(chalk.yellow('This command has moved. Use: team linear list issues'));
-    console.log('Or use the new structure:');
-    console.log(chalk.blue('  team linear list issues'));
   });
 
 program
@@ -76,10 +89,6 @@ program
   .description('AI summarization (alias for team linear summarize)')
   .action(async () => {
     console.log(chalk.yellow('This command has moved. Use: team linear summarize'));
-    console.log('Or use the new structure:');
-    console.log(chalk.blue('  team linear summarize cycle'));
-    console.log(chalk.blue('  team linear summarize project'));
-    console.log(chalk.blue('  team linear summarize team'));
   });
 
 program
@@ -93,7 +102,7 @@ program
 program.hook('preAction', (thisCommand) => {
   const commandName = thisCommand.name();
   const parentName = thisCommand.parent?.name();
-  const skipConfigCheck = ['setup', 'config', 'help', 'version', 'show', 'set', 'clear', 'team'];
+  const skipConfigCheck = ['setup', 'config', 'help', 'version', 'show', 'set', 'clear', 'team', 'check'];
   
   // Check if we're running setup command
   const args = process.argv;
@@ -117,15 +126,19 @@ program.hook('preAction', (thisCommand) => {
 program.on('--help', () => {
   console.log();
   console.log(chalk.blue('Examples:'));
-  console.log('  $ team setup                            Configure API keys');
-  console.log('  $ team health                           Check API status');
+  console.log('  $ team config setup                     Configure API keys');
+  console.log('  $ team config check                     Check API status');
+  console.log();
+  console.log(chalk.yellow('Configuration:'));
+  console.log('  $ team config setup                     Interactive setup wizard');
+  console.log('  $ team config show                      Show current config');
+  console.log('  $ team config set --linear-key KEY      Update specific values');
   console.log();
   console.log(chalk.yellow('Linear Integration:'));
   console.log('  $ team linear list cycles               List current cycles');
   console.log('  $ team linear list issues --team TEAM   List issues for team');
   console.log('  $ team linear planning                  Planning analysis');
   console.log('  $ team linear summarize cycle           AI cycle summary');
-  console.log('  $ team linear summarize project         AI project summary');
   console.log();
   console.log(chalk.yellow('Coda Integration:'));
   console.log('  $ team coda list-docs                   List Coda documents');
@@ -148,10 +161,10 @@ if (process.argv.length === 2) {
     console.log(chalk.blue('👋 Welcome to Linear AI CLI!'));
     console.log();
     console.log('Get started by configuring your API keys:');
-    console.log(chalk.green('  team setup'));
+    console.log(chalk.green('  team config setup'));
     console.log();
     console.log('Then check your API connections:');
-    console.log(chalk.green('  team health                 ') + '- Check API status');
+    console.log(chalk.green('  team config check           ') + '- Check API status');
     console.log();
     console.log('Try these commands:');
     console.log(chalk.green('  team linear list cycles     ') + '- List Linear cycles');

@@ -26,7 +26,7 @@ function createListDocsCommand(): Command {
       
       if (!codaApiKey) {
         console.log(chalk.red('✗ Coda API key not configured'));
-        console.log('Run `team setup` to configure your Coda API key');
+        console.log('Run `team config setup` to configure your Coda API key');
         return;
       }
 
@@ -88,7 +88,7 @@ function createSearchDocsCommand(): Command {
       
       if (!codaApiKey) {
         console.log(chalk.red('✗ Coda API key not configured'));
-        console.log('Run `team setup` to configure your Coda API key');
+        console.log('Run `team config setup` to configure your Coda API key');
         return;
       }
 
@@ -132,7 +132,7 @@ function createShowDocCommand(): Command {
       
       if (!codaApiKey) {
         console.log(chalk.red('✗ Coda API key not configured'));
-        console.log('Run `team setup` to configure your Coda API key');
+        console.log('Run `team config setup` to configure your Coda API key');
         return;
       }
 

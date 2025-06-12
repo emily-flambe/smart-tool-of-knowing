@@ -55,7 +55,7 @@ npm run build
    
    **Option A: Interactive Setup (Recommended)**
    ```bash
-   team setup
+   team config setup
    ```
    The setup wizard will:
    - Use existing values from your `.env` file as defaults
@@ -83,11 +83,11 @@ npm run build
 team --help
 
 # Configure API keys
-team setup
+team config setup
 
 # Check API health status
-team health
-team health --verbose
+team config check
+team config check --verbose
 
 # View current configuration
 team config show
@@ -182,12 +182,20 @@ team config clear
 
 | Command | Description |
 |---------|-------------|
-| `team setup` | Interactive setup wizard for API keys |
 | `team config` | Manage configuration settings |
-| `team health` | Check API health status |
 | `team linear` | Linear workspace integration |
 | `team coda` | Coda document integration |
 | `team models` | AI model management |
+
+### Configuration Commands
+
+| Command | Description |
+|---------|-------------|
+| `team config setup` | Interactive setup wizard for API keys |
+| `team config show` | Show current configuration |
+| `team config check` | Check API health status |
+| `team config set` | Update specific configuration values |
+| `team config clear` | Clear all configuration |
 
 ### Linear Subcommands
 
@@ -230,10 +238,10 @@ team config clear
 ### Quick Start
 ```bash
 # Setup
-team setup
+team config setup
 
 # Check API health
-team health
+team config check
 
 # List current work
 team linear list cycles
@@ -287,7 +295,10 @@ The CLI reads configuration in this order:
 
 ```bash
 # Interactive setup (creates/updates .env file)
-team setup
+team config setup
+
+# Check API connectivity and health
+team config check
 
 # View current configuration and .env file location
 team config show

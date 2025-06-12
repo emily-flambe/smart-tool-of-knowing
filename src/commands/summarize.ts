@@ -35,12 +35,12 @@ function createCycleSummaryCommand(): Command {
       const config = configManager.getConfig();
       
       if (!config.linearApiKey) {
-        console.log(chalk.red('❌ Linear API key not configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
         return;
       }
 
       if (!config.openaiApiKey && !config.anthropicApiKey) {
-        console.log(chalk.red('❌ No AI API keys configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ No AI API keys configured. Run `team config setup` first.'));
         return;
       }
 
@@ -175,12 +175,12 @@ function createProjectSummaryCommand(): Command {
       const config = configManager.getConfig();
       
       if (!config.linearApiKey) {
-        console.log(chalk.red('❌ Linear API key not configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
         return;
       }
 
       if (!config.openaiApiKey && !config.anthropicApiKey) {
-        console.log(chalk.red('❌ No AI API keys configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ No AI API keys configured. Run `team config setup` first.'));
         return;
       }
 
@@ -288,12 +288,12 @@ function createIssueSummaryCommand(): Command {
       const config = configManager.getConfig();
       
       if (!config.linearApiKey) {
-        console.log(chalk.red('❌ Linear API key not configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
         return;
       }
 
       if (!config.openaiApiKey && !config.anthropicApiKey) {
-        console.log(chalk.red('❌ No AI API keys configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ No AI API keys configured. Run `team config setup` first.'));
         return;
       }
 
@@ -355,12 +355,12 @@ function createTeamSummaryCommand(): Command {
       const config = configManager.getConfig();
       
       if (!config.linearApiKey) {
-        console.log(chalk.red('❌ Linear API key not configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
         return;
       }
 
       if (!config.openaiApiKey && !config.anthropicApiKey) {
-        console.log(chalk.red('❌ No AI API keys configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ No AI API keys configured. Run `team config setup` first.'));
         return;
       }
 

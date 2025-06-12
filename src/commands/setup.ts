@@ -178,7 +178,7 @@ export function createSetupCommand(): Command {
           codaKey = response.codaKey;
         } catch (error) {
           console.log(chalk.red('✗ Invalid Coda API key - saving anyway for troubleshooting'));
-          console.log(chalk.yellow('You can test connectivity with: team health'));
+          console.log(chalk.yellow('You can test connectivity with: team config check'));
           codaKey = response.codaKey; // Save even if validation fails
         }
       }
@@ -206,7 +206,7 @@ export function createSetupCommand(): Command {
       console.log('You can now use the CLI to access your team knowledge.\n');
       
       console.log('Try these commands:');
-      console.log(chalk.blue('  team health                     ') + '- Check API connectivity');
+      console.log(chalk.blue('  team config check               ') + '- Check API connectivity');
       console.log(chalk.blue('  team linear list cycles         ') + '- List current cycles');
       console.log(chalk.blue('  team linear list issues         ') + '- List recent issues');
       if (codaKey) {
