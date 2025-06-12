@@ -75,6 +75,10 @@ team --help
 
 # Configure API keys
 team setup
+
+# Check API health status
+team health
+team health --verbose
 ```
 
 ### Linear Integration
@@ -168,6 +172,7 @@ team config clear
 |---------|-------------|
 | `team setup` | Interactive setup wizard for API keys |
 | `team config` | Manage configuration settings |
+| `team health` | Check API health status |
 | `team linear` | Linear workspace integration |
 | `team coda` | Coda document integration |
 | `team models` | AI model management |
@@ -214,6 +219,9 @@ team config clear
 ```bash
 # Setup
 team setup
+
+# Check API health
+team health
 
 # List current work
 team linear list cycles

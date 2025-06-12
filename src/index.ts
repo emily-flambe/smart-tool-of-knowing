@@ -12,6 +12,7 @@ import { createSummarizeCommand } from './commands/summarize.js';
 import { createModelsCommand } from './commands/models.js';
 import { createPlanningCommand } from './commands/planning.js';
 import { createCodaCommand } from './commands/coda.js';
+import { createHealthCommand } from './commands/health.js';
 import { configManager } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -35,6 +36,7 @@ program
 // Add commands
 program.addCommand(createSetupCommand());
 program.addCommand(createConfigCommand());
+program.addCommand(createHealthCommand());
 
 // Linear system commands
 const linearCommand = new Command('linear');
@@ -116,6 +118,7 @@ program.on('--help', () => {
   console.log();
   console.log(chalk.blue('Examples:'));
   console.log('  $ team setup                            Configure API keys');
+  console.log('  $ team health                           Check API status');
   console.log();
   console.log(chalk.yellow('Linear Integration:'));
   console.log('  $ team linear list cycles               List current cycles');
@@ -147,7 +150,10 @@ if (process.argv.length === 2) {
     console.log('Get started by configuring your API keys:');
     console.log(chalk.green('  team setup'));
     console.log();
-    console.log('Then try these commands:');
+    console.log('Then check your API connections:');
+    console.log(chalk.green('  team health                 ') + '- Check API status');
+    console.log();
+    console.log('Try these commands:');
     console.log(chalk.green('  team linear list cycles     ') + '- List Linear cycles');
     console.log(chalk.green('  team coda list-docs         ') + '- List Coda documents');
     console.log();
