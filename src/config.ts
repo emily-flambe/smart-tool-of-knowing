@@ -13,6 +13,7 @@ interface Config {
   linearApiKey?: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  codaApiKey?: string;
   defaultAiProvider?: 'openai' | 'anthropic';
   defaultSummaryType?: 'brief' | 'detailed' | 'action-items';
   openaiModel?: string;
@@ -39,6 +40,7 @@ class ConfigManager {
       linearApiKey: this.getLinearApiKey(),
       openaiApiKey: this.getOpenAIApiKey(),
       anthropicApiKey: this.getAnthropicApiKey(),
+      codaApiKey: this.getCodaApiKey(),
       defaultAiProvider: this.getDefaultAiProvider(),
       defaultSummaryType: this.getDefaultSummaryType(),
       openaiModel: this.getOpenAIModel(),
@@ -68,6 +70,14 @@ class ConfigManager {
 
   setAnthropicApiKey(apiKey: string): void {
     this.store.set('anthropicApiKey', apiKey);
+  }
+
+  getCodaApiKey(): string | undefined {
+    return process.env.CODA_API_KEY || this.store.get('codaApiKey');
+  }
+
+  setCodaApiKey(apiKey: string): void {
+    this.store.set('codaApiKey', apiKey);
   }
 
   getDefaultAiProvider(): 'openai' | 'anthropic' {
@@ -139,6 +149,7 @@ class ConfigManager {
       linearApiKey: config.linearApiKey ? '***' + config.linearApiKey.slice(-4) : undefined,
       openaiApiKey: config.openaiApiKey ? '***' + config.openaiApiKey.slice(-4) : undefined,
       anthropicApiKey: config.anthropicApiKey ? '***' + config.anthropicApiKey.slice(-4) : undefined,
+      codaApiKey: config.codaApiKey ? '***' + config.codaApiKey.slice(-4) : undefined,
     };
   }
 }

@@ -1,6 +1,6 @@
-# Linear AI CLI
+# Team Knowledge CLI
 
-A powerful command-line interface for Linear that integrates with AI providers (OpenAI and Anthropic) to provide intelligent summarization of tickets, projects, and cycles.
+A comprehensive command-line interface that integrates Linear, Coda, and AI providers (OpenAI and Anthropic) to provide intelligent team insights, documentation access, and project management.
 
 ## Features
 
@@ -9,6 +9,13 @@ A powerful command-line interface for Linear that integrates with AI providers (
 - Filter issues by team, project, cycle, assignee, and status
 - View detailed issue information
 - Support for both Personal API keys and OAuth2 tokens
+- Planning analysis with workload distribution
+
+📚 **Coda Integration**
+- List and search Coda documents
+- View document details and tables
+- Access team documentation and knowledge base
+- Seamless document discovery
 
 🤖 **AI-Powered Summarization**
 - Summarize individual issues, cycles, projects, or teams
@@ -40,7 +47,11 @@ npm run build
    - **OpenAI**: Get your API key from [OpenAI Platform](https://platform.openai.com/api-keys)
    - **Anthropic**: Get your API key from [Anthropic Console](https://console.anthropic.com/)
 
-3. **Configure the CLI**
+3. **Get your Coda API key (optional)**
+   - Go to [Coda Account Settings](https://coda.io/account)
+   - Generate a new API token
+
+4. **Configure the CLI**
    ```bash
    team setup
    ```
@@ -50,6 +61,7 @@ npm run build
    LINEAR_API_KEY=lin_api_your_key_here
    OPENAI_API_KEY=sk-your_openai_key_here
    ANTHROPIC_API_KEY=sk-ant-your_anthropic_key_here
+   CODA_API_KEY=your_coda_api_key_here
    DEFAULT_AI_PROVIDER=openai
    ```
 
@@ -63,50 +75,72 @@ team --help
 
 # Configure API keys
 team setup
+```
 
+### Linear Integration
+
+```bash
 # List current cycles
-team cycles
-team list cycles
+team linear list cycles
 
 # List issues
-team issues
-team list issues
+team linear list issues
 
 # List issues with filters
-team issues --team TEAM-123
-team issues --cycle CYCLE-456
-team issues --project PROJECT-789
-team issues --assignee "John Doe"
-team issues --status "in progress"
+team linear list issues --team TEAM-123
+team linear list issues --cycle CYCLE-456
+team linear list issues --project PROJECT-789
+team linear list issues --assignee "John Doe"
+team linear list issues --status "in progress"
 
 # List projects and teams
-team list projects
-team list teams
+team linear list projects
+team linear list teams
+
+# Planning analysis
+team linear planning
+```
+
+### Coda Integration
+
+```bash
+# List Coda documents
+team coda list-docs
+
+# Search documents
+team coda search-docs "project planning"
+team coda search-docs "meeting notes" --limit 5
+
+# Show document details
+team coda show-doc DOC-12345
+
+# List document tables
+team coda show-doc DOC-12345
 ```
 
 ### AI Summarization
 
 ```bash
 # Summarize current cycle
-team summarize cycle
+team linear summarize cycle
 
 # Summarize specific cycle
-team summarize cycle --cycle-id CYCLE-123
+team linear summarize cycle --cycle-id CYCLE-123
 
 # Summarize project
-team summarize project
-team summarize project --project-id PROJECT-456
+team linear summarize project
+team linear summarize project --project-id PROJECT-456
 
 # Summarize team issues
-team summarize team
-team summarize team --team-id TEAM-789
+team linear summarize team
+team linear summarize team --team-id TEAM-789
 
 # Summarize individual issue
-team summarize issue LIN-123
+team linear summarize issue LIN-123
 
 # Advanced summarization options
-team summarize cycle --type detailed --group-by project --ai-provider anthropic
-team summarize project --type action-items --no-metrics
+team linear summarize cycle --type detailed --group-by project --ai-provider anthropic
+team linear summarize project --type action-items --no-metrics
 ```
 
 ### Configuration Management
@@ -118,6 +152,7 @@ team config show
 # Set individual config values
 team config set --linear-key lin_api_new_key
 team config set --openai-key sk-new_openai_key
+team config set --coda-key your_new_coda_key
 team config set --ai-provider anthropic
 team config set --summary-type detailed
 
@@ -133,26 +168,36 @@ team config clear
 |---------|-------------|
 | `team setup` | Interactive setup wizard for API keys |
 | `team config` | Manage configuration settings |
-| `team list` | List Linear items (cycles, issues, projects, teams) |
-| `team summarize` | AI-powered summarization |
+| `team linear` | Linear workspace integration |
+| `team coda` | Coda document integration |
+| `team models` | AI model management |
 
-### List Subcommands
-
-| Command | Description | Options |
-|---------|-------------|---------|
-| `team list cycles` | List current active cycles | `--team <id>` |
-| `team list issues` | List issues | `--cycle <id>`, `--project <id>`, `--team <id>`, `--limit <n>`, `--assignee <name>`, `--status <status>` |
-| `team list projects` | List all projects | |
-| `team list teams` | List all teams | |
-
-### Summarize Subcommands
+### Linear Subcommands
 
 | Command | Description | Options |
 |---------|-------------|---------|
-| `team summarize cycle` | Summarize cycle issues | `--cycle-id <id>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
-| `team summarize project` | Summarize project issues | `--project-id <id>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
-| `team summarize team` | Summarize team issues | `--team-id <id>`, `--limit <n>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
-| `team summarize issue` | Summarize individual issue | `<issue-id>`, `--type <type>`, `--ai-provider <provider>` |
+| `team linear list cycles` | List current active cycles | `--team <id>` |
+| `team linear list issues` | List issues | `--cycle <id>`, `--project <id>`, `--team <id>`, `--limit <n>`, `--assignee <name>`, `--status <status>` |
+| `team linear list projects` | List all projects | |
+| `team linear list teams` | List all teams | |
+| `team linear planning` | Show planning analysis | |
+
+### Linear Summarize Subcommands
+
+| Command | Description | Options |
+|---------|-------------|---------|
+| `team linear summarize cycle` | Summarize cycle issues | `--cycle-id <id>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
+| `team linear summarize project` | Summarize project issues | `--project-id <id>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
+| `team linear summarize team` | Summarize team issues | `--team-id <id>`, `--limit <n>`, `--type <type>`, `--group-by <grouping>`, `--ai-provider <provider>`, `--no-metrics` |
+| `team linear summarize issue` | Summarize individual issue | `<issue-id>`, `--type <type>`, `--ai-provider <provider>` |
+
+### Coda Subcommands
+
+| Command | Description | Options |
+|---------|-------------|---------|
+| `team coda list-docs` | List Coda documents | `--limit <n>` |
+| `team coda search-docs` | Search Coda documents | `<query>`, `--limit <n>` |
+| `team coda show-doc` | Show document details | `<doc-id>` |
 
 ### Options Reference
 
@@ -171,26 +216,32 @@ team config clear
 team setup
 
 # List current work
-team cycles
-team issues
+team linear list cycles
+team linear list issues
+
+# Browse documentation
+team coda list-docs
 
 # Get AI summary of current cycle
-team summarize cycle
+team linear summarize cycle
 ```
 
 ### Advanced Usage
 ```bash
 # Detailed project summary grouped by assignee using Claude
-team summarize project --type detailed --group-by assignee --ai-provider anthropic
+team linear summarize project --type detailed --group-by assignee --ai-provider anthropic
 
 # Action items for team with no metrics
-team summarize team --type action-items --no-metrics
+team linear summarize team --type action-items --no-metrics
 
 # Issues for specific team with limit
-team issues --team TEAM-123 --limit 10
+team linear list issues --team TEAM-123 --limit 10
+
+# Search team documentation
+team coda search-docs "sprint planning" --limit 5
 
 # Summarize specific issue
-team summarize issue LIN-456
+team linear summarize issue LIN-456
 ```
 
 ## Configuration
@@ -201,6 +252,7 @@ The CLI stores configuration in your home directory using `configstore`. You can
 LINEAR_API_KEY=lin_api_your_key
 OPENAI_API_KEY=sk-your_openai_key
 ANTHROPIC_API_KEY=sk-ant-your_anthropic_key
+CODA_API_KEY=your_coda_api_key
 DEFAULT_AI_PROVIDER=openai
 ```
 
@@ -210,16 +262,18 @@ DEFAULT_AI_PROVIDER=openai
 - **Linear OAuth2 Token**: `lin_oauth_xxxxxxxxxx`
 - **OpenAI API Key**: `sk-xxxxxxxxxx`
 - **Anthropic API Key**: `sk-ant-xxxxxxxxxx`
+- **Coda API Key**: `your_coda_api_key`
 
 ## Error Handling
 
 The CLI provides helpful error messages for common issues:
 
-- Invalid or missing API keys
+- Invalid or missing API keys (Linear, OpenAI, Anthropic, Coda)
 - Network connectivity problems
 - Linear API rate limiting
+- Coda API rate limiting
 - AI provider service issues
-- Invalid issue/project/team IDs
+- Invalid issue/project/team/document IDs
 
 ## Contributing
 
@@ -236,5 +290,6 @@ MIT License - see LICENSE file for details.
 ## Support
 
 - Create an issue for bug reports or feature requests
-- Check the [Linear API documentation](https://developers.linear.app/) for API-related questions
+- Check the [Linear API documentation](https://developers.linear.app/) for Linear API questions
+- Review [Coda API documentation](https://coda.io/developers) for Coda API questions
 - Review [OpenAI](https://platform.openai.com/docs) or [Anthropic](https://docs.anthropic.com/) documentation for AI-related questions

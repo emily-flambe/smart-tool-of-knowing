@@ -5,6 +5,7 @@ import ora from 'ora';
 import { configManager } from '../config.js';
 import { LinearClient } from '../linear-client.js';
 import { AIService } from '../ai-service.js';
+import { CodaClient } from '../coda-client.js';
 
 export function createSetupCommand(): Command {
   const command = new Command('setup');
@@ -183,6 +184,40 @@ export function createSetupCommand(): Command {
         },
       ]);
       configManager.setDefaultSummaryType(summaryType);
+
+      // Optional Coda integration
+      const { setupCoda } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'setupCoda',
+          message: 'Would you like to set up Coda integration? (optional)',
+          default: false,
+        },
+      ]);
+
+      if (setupCoda) {
+        const { codaKey } = await inquirer.prompt([
+          {
+            type: 'password',
+            name: 'codaKey',
+            message: 'Enter your Coda API key:',
+            validate: (input: string) => {
+              if (!input.trim()) return 'Coda API key is required';
+              return true;
+            },
+          },
+        ]);
+
+        try {
+          console.log(chalk.yellow('Validating Coda API key...'));
+          const codaClient = new CodaClient(codaKey);
+          const user = await codaClient.validateApiKey();
+          console.log(chalk.green(`✓ Coda API key validated for ${user.user.name}`));
+          configManager.setCodaApiKey(codaKey);
+        } catch (error) {
+          console.log(chalk.red('✗ Invalid Coda API key - skipping Coda setup'));
+        }
+      }
 
       console.log(chalk.green('\n✅ Setup complete!'));
       console.log('You can now use the CLI to list and summarize your Linear issues.');

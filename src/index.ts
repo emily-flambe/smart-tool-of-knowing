@@ -11,6 +11,7 @@ import { createListCommand } from './commands/list.js';
 import { createSummarizeCommand } from './commands/summarize.js';
 import { createModelsCommand } from './commands/models.js';
 import { createPlanningCommand } from './commands/planning.js';
+import { createCodaCommand } from './commands/coda.js';
 import { configManager } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,49 +29,62 @@ const program = new Command();
 
 program
   .name('team')
-  .description('Linear AI CLI - Manage and summarize your Linear workspace with AI')
+  .description('Team Knowledge CLI - Integrate Linear, Coda, and AI for comprehensive team insights')
   .version(packageInfo.version);
 
 // Add commands
 program.addCommand(createSetupCommand());
 program.addCommand(createConfigCommand());
-program.addCommand(createListCommand());
-program.addCommand(createSummarizeCommand());
-program.addCommand(createModelsCommand());
-program.addCommand(createPlanningCommand());
 
-// Add some aliases for common operations
+// Linear system commands
+const linearCommand = new Command('linear');
+linearCommand.description('Linear workspace integration');
+linearCommand.addCommand(createListCommand().name('list'));
+linearCommand.addCommand(createSummarizeCommand().name('summarize'));
+linearCommand.addCommand(createPlanningCommand().name('planning'));
+program.addCommand(linearCommand);
+
+// Coda system commands
+program.addCommand(createCodaCommand());
+
+// Models command (global)
+program.addCommand(createModelsCommand());
+
+// Add some aliases for backward compatibility
 program
   .command('cycles')
-  .description('List current cycles (alias for list cycles)')
+  .description('List current cycles (alias for team linear list cycles)')
   .action(async () => {
-    const listCommand = createListCommand();
-    const cyclesCommand = listCommand.commands.find(cmd => cmd.name() === 'cycles');
-    if (cyclesCommand) {
-      await cyclesCommand.parseAsync([], { from: 'user' });
-    }
+    console.log(chalk.yellow('This command has moved. Use: team linear list cycles'));
+    console.log('Or use the new structure:');
+    console.log(chalk.blue('  team linear list cycles'));
   });
 
 program
   .command('issues')
-  .description('List issues (alias for list issues)')
-  .option('--cycle <cycleId>', 'Filter by cycle ID')
-  .option('--project <projectId>', 'Filter by project ID')
-  .option('--team <teamId>', 'Filter by team ID')
-  .option('--limit <number>', 'Limit number of results', '20')
-  .action(async (options) => {
-    const listCommand = createListCommand();
-    const issuesCommand = listCommand.commands.find(cmd => cmd.name() === 'issues');
-    if (issuesCommand) {
-      // Convert options to argv format
-      const argv = ['issues'];
-      if (options.cycle) argv.push('--cycle', options.cycle);
-      if (options.project) argv.push('--project', options.project);
-      if (options.team) argv.push('--team', options.team);
-      if (options.limit) argv.push('--limit', options.limit);
-      
-      await issuesCommand.parseAsync(argv, { from: 'user' });
-    }
+  .description('List issues (alias for team linear list issues)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team linear list issues'));
+    console.log('Or use the new structure:');
+    console.log(chalk.blue('  team linear list issues'));
+  });
+
+program
+  .command('summarize')
+  .description('AI summarization (alias for team linear summarize)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team linear summarize'));
+    console.log('Or use the new structure:');
+    console.log(chalk.blue('  team linear summarize cycle'));
+    console.log(chalk.blue('  team linear summarize project'));
+    console.log(chalk.blue('  team linear summarize team'));
+  });
+
+program
+  .command('planning')
+  .description('Planning analysis (alias for team linear planning)')
+  .action(async () => {
+    console.log(chalk.yellow('This command has moved. Use: team linear planning'));
   });
 
 // Check configuration on startup for most commands
@@ -101,15 +115,23 @@ program.hook('preAction', (thisCommand) => {
 program.on('--help', () => {
   console.log();
   console.log(chalk.blue('Examples:'));
-  console.log('  $ team setup                    Configure API keys');
-  console.log('  $ team cycles                   List current cycles');
-  console.log('  $ team issues --team TEAM-123   List issues for a team');
-  console.log('  $ team planning                 Planning overview with workload');
-  console.log('  $ team models list              Show available AI models');
-  console.log('  $ team models select anthropic  Choose Anthropic model');
-  console.log('  $ team summarize cycle          AI summary of cycle issues');
-  console.log('  $ team summarize project        AI summary of project issues');
-  console.log('  $ team summarize issue LIN-123  AI summary of specific issue');
+  console.log('  $ team setup                            Configure API keys');
+  console.log();
+  console.log(chalk.yellow('Linear Integration:'));
+  console.log('  $ team linear list cycles               List current cycles');
+  console.log('  $ team linear list issues --team TEAM   List issues for team');
+  console.log('  $ team linear planning                  Planning analysis');
+  console.log('  $ team linear summarize cycle           AI cycle summary');
+  console.log('  $ team linear summarize project         AI project summary');
+  console.log();
+  console.log(chalk.yellow('Coda Integration:'));
+  console.log('  $ team coda list-docs                   List Coda documents');
+  console.log('  $ team coda search-docs "project"       Search documents');
+  console.log('  $ team coda show-doc DOC-ID             Show document details');
+  console.log();
+  console.log(chalk.yellow('AI Models:'));
+  console.log('  $ team models list                      Available AI models');
+  console.log('  $ team models select anthropic          Choose model');
   console.log();
   console.log(chalk.yellow('Need help?'));
   console.log('  Visit: https://github.com/your-repo/linear-ai-cli');
@@ -124,6 +146,10 @@ if (process.argv.length === 2) {
     console.log();
     console.log('Get started by configuring your API keys:');
     console.log(chalk.green('  team setup'));
+    console.log();
+    console.log('Then try these commands:');
+    console.log(chalk.green('  team linear list cycles     ') + '- List Linear cycles');
+    console.log(chalk.green('  team coda list-docs         ') + '- List Coda documents');
     console.log();
     console.log('Or see all available commands:');
     console.log(chalk.green('  team --help'));

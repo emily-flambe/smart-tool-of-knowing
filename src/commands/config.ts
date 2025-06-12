@@ -28,6 +28,7 @@ function createShowCommand(): Command {
       console.log(`OpenAI Model: ${config.openaiModel || 'Default (gpt-4)'}`);
       console.log(`Anthropic API Key: ${config.anthropicApiKey || chalk.red('Not set')}`);
       console.log(`Anthropic Model: ${config.anthropicModel || 'Default (claude-3-5-sonnet-20241022)'}`);
+      console.log(`Coda API Key: ${config.codaApiKey || chalk.red('Not set')}`);
       console.log(`Default AI Provider: ${config.defaultAiProvider}`);
       console.log(`Default Summary Type: ${config.defaultSummaryType}`);
       
@@ -52,6 +53,7 @@ function createSetCommand(): Command {
     .option('--openai-model <model>', 'Set OpenAI model')
     .option('--anthropic-key <key>', 'Set Anthropic API key')
     .option('--anthropic-model <model>', 'Set Anthropic model')
+    .option('--coda-key <key>', 'Set Coda API key')
     .option('--ai-provider <provider>', 'Set default AI provider (openai|anthropic)')
     .option('--summary-type <type>', 'Set default summary type (brief|detailed|action-items)')
     .action(async (options) => {
@@ -78,6 +80,11 @@ function createSetCommand(): Command {
       if (options.anthropicModel) {
         configManager.setAnthropicModel(options.anthropicModel);
         console.log(chalk.green(`✓ Anthropic model set to ${options.anthropicModel}`));
+      }
+
+      if (options.codaKey) {
+        configManager.setCodaApiKey(options.codaKey);
+        console.log(chalk.green('✓ Coda API key updated'));
       }
       
       if (options.aiProvider) {
