@@ -355,6 +355,136 @@ team coda extract-page --url https://coda.io/d/_dDocId/_suPageId
 team coda ask "How do I configure the development environment?"
 ```
 
+## Content Analysis Guide
+
+### When to Use RAG vs Manual Approaches
+
+The CLI provides multiple ways to analyze your Coda content. Here's guidance on when to use each approach:
+
+#### 🤖 Use RAG (`team coda ask`) When:
+
+**Best for synthesizing information across multiple sources:**
+
+```bash
+# Questions that need information from multiple pages
+team coda ask "What does a new employee need to know about tech onboarding?"
+
+# Policy and process questions
+team coda ask "What is our incident response process?"
+
+# Complex setup procedures
+team coda ask "How do I set up the development environment from scratch?"
+
+# Comparative or summary questions
+team coda ask "What are the differences between our dev and prod deployment processes?"
+```
+
+**Advantages:**
+- ✅ **Semantic Understanding**: Finds relevant content even without exact keyword matches
+- ✅ **Information Synthesis**: Combines scattered information into coherent answers
+- ✅ **Context Awareness**: Understands relationships between different concepts
+- ✅ **Time Efficient**: Gets structured answers immediately
+- ✅ **Handles Complexity**: Can process and organize large amounts of information
+
+**RAG Options for Different Needs:**
+```bash
+# Comprehensive answers with full context
+team coda ask "tech setup process" --use-full-content
+
+# Focus on main documentation only
+team coda ask "onboarding checklist" --focus-on-default-doc
+
+# Include data from tables
+team coda ask "team responsibilities" --include-table-data
+
+# Force fresh data
+team coda ask "latest security guidelines" --refresh-cache
+```
+
+#### 📁 Use Manual File Review When:
+
+**Best for detailed examination and verification:**
+
+```bash
+# Browse available content
+ls data/coda/ | grep -i "keyword"
+
+# Read specific files
+cat data/coda/onboarding-as-a-developer_tech-setup-canvas-S2q9CUy8kx.md
+
+# Search for exact terms across files
+grep -r "specific term" data/coda/
+
+# Compare multiple files
+diff data/coda/file1.md data/coda/file2.md
+```
+
+**Use Manual Approach When:**
+- 🔍 **Exact Text Needed**: You need specific wording or exact quotes
+- 📋 **Verification**: Confirming AI responses against source material
+- 🗂️ **Content Auditing**: Reviewing what content exists and its structure
+- ✏️ **Editing Planning**: Understanding file organization before making changes
+- 🔧 **Troubleshooting**: Debugging extraction issues or checking metadata
+- 📚 **Learning Structure**: Understanding how content is organized
+
+#### 🔄 Hybrid Approach (Recommended):
+
+**Step-by-step workflow for comprehensive analysis:**
+
+1. **Start with RAG for Overview:**
+   ```bash
+   team coda ask "What do I need to know about [topic]?"
+   ```
+
+2. **Identify Key Areas:**
+   - Note which specific documents or sections are mentioned
+   - Look for gaps or areas needing more detail
+
+3. **Manual Deep Dive:**
+   ```bash
+   # Find relevant files
+   ls data/coda/ | grep -i "topic"
+   
+   # Read specific files for details
+   cat data/coda/relevant-file.md
+   ```
+
+4. **Follow-up Questions:**
+   ```bash
+   # Ask more specific questions based on your findings
+   team coda ask "Can you explain the specific steps for [detailed process]?"
+   ```
+
+#### 📋 Decision Matrix:
+
+| Question Type | Recommended Approach | Example |
+|---------------|---------------------|---------|
+| **Cross-document synthesis** | RAG | "What's our complete onboarding process?" |
+| **Policy clarification** | RAG | "What are our working hours and meeting guidelines?" |
+| **Step-by-step procedures** | RAG → Manual verification | "How do I deploy to production?" |
+| **Exact quotes/wording** | Manual | Finding specific policy language |
+| **Content inventory** | Manual | "What documentation do we have about X?" |
+| **Metadata analysis** | Manual | Checking creation dates, page hierarchy |
+| **Troubleshooting setup** | RAG → Manual if needed | "Why isn't my dev environment working?" |
+| **Comparative analysis** | RAG | "How do dev and prod environments differ?" |
+
+#### 💡 Pro Tips:
+
+**For New Users:**
+1. Start with `team coda extract-all` to populate both formats
+2. Use RAG for initial exploration and understanding
+3. Switch to manual review for detailed implementation
+
+**For Complex Topics:**
+1. Use RAG to get the big picture
+2. Manual review of specific files mentioned in RAG responses
+3. Follow up with targeted RAG questions for clarification
+
+**For Verification:**
+1. Get RAG answer first
+2. Manually verify critical information in source files
+3. Use manual approach for compliance or audit requirements
+
 ## Configuration
 
 The CLI stores configuration in a `.env` file in your project directory. This file takes priority over environment variables and provides a clean, git-ignorable way to manage your API keys:

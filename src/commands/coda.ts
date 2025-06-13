@@ -20,8 +20,7 @@ export function createCodaCommand(): Command {
     .addCommand(createListDocsCommand())
     .addCommand(createSearchDocsCommand())
     .addCommand(createShowDocCommand())
-    .addCommand(createExtractCommand())
-    .addCommand(createExtractPageCommand())
+    .addCommand(createExtractUrlCommand())
     .addCommand(createExtractAllCommand())
     .addCommand(createAskCommand());
 
@@ -468,86 +467,16 @@ function createShowDocCommand(): Command {
     });
 }
 
-function createExtractCommand(): Command {
-  return new Command('extract')
-    .description('Extract and index content from your default Coda workspace')
-    .option('--include-tables', 'Include table data in extraction')
-    .option('--max-docs <number>', 'Maximum documents to process', '25')
-    .option('--force', 'Force re-extraction even if cache is recent')
-    .action(async (options) => {
-      // Check for API keys
-      const codaApiKey = configManager.getCodaApiKey();
-      const anthropicApiKey = configManager.getAnthropicApiKey();
-      
-      if (!codaApiKey) {
-        console.log(chalk.red('✗ Coda API key not configured'));
-        console.log('Run `team config setup` to configure your Coda API key');
-        return;
-      }
 
-      if (!anthropicApiKey) {
-        console.log(chalk.red('✗ Anthropic API key not configured'));
-        console.log('Run `team config setup` to configure your Anthropic API key');
-        return;
-      }
-
-      // Check if default document is configured
-      const defaultDocId = configManager.getDefaultCodaDocId();
-      if (!defaultDocId) {
-        console.log(chalk.red('✗ No default document configured'));
-        console.log('Run `team config setup` to select a default document');
-        return;
-      }
-
-      const spinner = ora('Extracting and indexing content from your Coda workspace...').start();
-
-      try {
-        const ragService = new RAGService();
-        await ragService.initialize();
-
-        const result = await ragService.extractAndCacheContent({
-          includeTableData: options.includeTables,
-          maxDocuments: parseInt(options.maxDocs),
-          forceRefresh: options.force
-        });
-
-        spinner.stop();
-
-        console.log(chalk.green('✓ Content extraction completed successfully!'));
-        console.log();
-        console.log(`${chalk.bold('Documents processed:')} ${result.documentsProcessed}`);
-        console.log(`${chalk.bold('Pages extracted:')} ${result.pagesExtracted}`);
-        console.log(`${chalk.bold('Table rows extracted:')} ${result.tableRowsExtracted}`);
-        console.log(`${chalk.bold('Total chunks created:')} ${result.totalChunks}`);
-        console.log(`${chalk.bold('Embeddings generated:')} ${result.embeddingsGenerated}`);
-        console.log(`${chalk.bold('Extraction time:')} ${result.extractionTime}ms`);
-        console.log();
-        console.log(chalk.blue('💡 You can now ask questions using `team coda ask "<your question>"`'));
-
-      } catch (error: any) {
-        spinner.stop();
-        console.log(chalk.red(`✗ Error during extraction: ${error.message}`));
-        
-        if (error.message.includes('API key not configured')) {
-          console.log('Run `team config setup` to configure your API keys');
-        }
-        if (error.message.includes('document may not exist')) {
-          console.log('The default document may not exist or you may not have access to it.');
-          console.log('Run `team config setup` to select a different default document.');
-        }
-      }
-    });
-}
-
-function createExtractPageCommand(): Command {
-  return new Command('extract-page')
+function createExtractUrlCommand(): Command {
+  return new Command('extract-url')
     .description('Extract and save page content from a Coda URL to local database')
     .option('--url <url>', 'Coda page URL to extract')
     .option('--force', 'Force re-extraction even if page is cached')
     .action(async (options) => {
       if (!options.url) {
         console.log(chalk.red('✗ URL is required. Use --url <coda-page-url>'));
-        console.log('Example: team coda extract-page --url https://coda.io/d/_dK1XVcbhGFG/_suVLWNBV');
+        console.log('Example: team coda extract-url --url https://coda.io/d/_dK1XVcbhGFG/_suVLWNBV');
         return;
       }
 
@@ -722,19 +651,28 @@ ${pageContent}
 
 function createExtractAllCommand(): Command {
   return new Command('extract-all')
-    .description('Extract all pages from the default document to markdown files')
+    .description('Extract all pages from the default document to markdown files and create vector embeddings')
     .option('--force', 'Force re-extraction even if files exist')
     .option('--limit <number>', 'Limit number of pages to extract', '100')
     .option('--exclude-subpages', 'Only extract top-level pages, skip all subpages')
     .option('--include-hidden', 'Include pages that appear to be hidden or private (default: exclude)')
     .option('--min-content-length <number>', 'Skip pages with less than this many characters of content', '10')
+    .option('--skip-embeddings', 'Skip creating vector embeddings (only extract to files)')
     .action(async (options) => {
-      // Check API key
+      // Check API keys
       const codaApiKey = configManager.getCodaApiKey();
+      const anthropicApiKey = configManager.getAnthropicApiKey();
       
       if (!codaApiKey) {
         console.log(chalk.red('✗ Coda API key not configured'));
         console.log('Run `team config setup` to configure your Coda API key');
+        return;
+      }
+
+      if (!anthropicApiKey && !options.skipEmbeddings) {
+        console.log(chalk.red('✗ Anthropic API key not configured'));
+        console.log('Run `team config setup` to configure your Anthropic API key');
+        console.log('Or use --skip-embeddings to only extract files without vector embeddings');
         return;
       }
 
@@ -1037,6 +975,30 @@ ${pageContent}
           }
         }
 
+        // Create vector embeddings if not skipped
+        let embeddingResult = null;
+        if (!options.skipEmbeddings && (successCount > 0 || updatedCount > 0)) {
+          console.log();
+          console.log(chalk.blue('🔍 Creating vector embeddings for AI search...'));
+          
+          try {
+            const ragService = new RAGService();
+            await ragService.initialize();
+            
+            embeddingResult = await ragService.extractAndCacheContent({
+              includeTableData: false, // Focus on pages for now
+              maxDocuments: 1, // Only process the default document
+              forceRefresh: options.force
+            });
+            
+            console.log(chalk.green('✓ Vector embeddings created successfully!'));
+          } catch (error: any) {
+            // Don't fail the entire process if embeddings fail
+            console.log(chalk.yellow(`⚠️  Warning: Failed to create embeddings: ${error.message}`));
+            console.log(chalk.gray('   Files were still extracted successfully. You can try embeddings later with: team coda ask'));
+          }
+        }
+
         // Summary
         console.log();
         console.log(chalk.green(`✓ Extraction completed!`));
@@ -1045,6 +1007,11 @@ ${pageContent}
         console.log(`${chalk.bold('Skipped:')} ${skipCount} pages`);
         console.log(`${chalk.bold('Errors:')} ${errorCount} pages`);
         console.log(`${chalk.bold('Output directory:')} ${codaDir}`);
+        
+        if (embeddingResult) {
+          console.log(`${chalk.bold('Embeddings generated:')} ${embeddingResult.embeddingsGenerated}`);
+          console.log(`${chalk.bold('Total chunks created:')} ${embeddingResult.totalChunks}`);
+        }
 
         if (successCount > 0 || updatedCount > 0) {
           console.log();
@@ -1056,6 +1023,9 @@ ${pageContent}
           console.log('   - Search through content with grep');
           console.log('   - Version control the markdown files');
           console.log('   - Use database to track duplicates and updates');
+          if (embeddingResult) {
+            console.log('   - Ask AI questions with: team coda ask "<your question>"');
+          }
         }
 
       } catch (error: any) {

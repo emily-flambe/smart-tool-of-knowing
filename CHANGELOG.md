@@ -83,6 +83,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Status Indicators**: Clear visual feedback for all operations
 - **Error Messages**: Helpful error messages with suggested solutions
 - **Documentation**: Updated README with complete Coda integration examples
+- **Usage Guidance**: Comprehensive "Content Analysis Guide" with decision matrix for RAG vs manual approaches
 
 ### 📊 Enhanced User Experience
 - **Progress Tracking**: Real-time progress bars for bulk operations
@@ -91,6 +92,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Interactive Browsing**: Easy navigation through document structures
 - **Rich Metadata**: Complete page information including creation dates, update times, and URLs
 
+### 📚 Documentation & Guidance
+- **Content Analysis Guide**: Comprehensive guide on when to use RAG vs manual file analysis
+- **Decision Matrix**: Clear mapping of question types to recommended approaches
+- **Workflow Examples**: Step-by-step processes for different analysis scenarios
+- **Best Practices**: Pro tips for new users, complex topics, and verification workflows
+- **Hybrid Approaches**: Guidance on combining AI synthesis with manual verification
+
 ### 🎯 New Use Cases
 - **Knowledge Base Q&A**: Ask questions about your team documentation in natural language
 - **Onboarding Documentation**: Extract and organize onboarding materials for new team members
@@ -98,6 +106,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Offline Documentation Access**: Work with documentation without internet connectivity
 - **Documentation Search**: Semantic search across all your Coda content
 - **Content Analysis**: Analyze documentation patterns and identify gaps
+- **Guided Analysis Workflows**: Step-by-step guidance for choosing between RAG and manual approaches
+- **Hybrid Information Discovery**: Combine AI synthesis with manual verification for comprehensive analysis
 
 ## [1.0.0] - 2025-01-11
 
