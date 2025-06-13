@@ -18,7 +18,7 @@ export function createPlanningCommand(): Command {
     .action(async (options) => {
       const config = configManager.getConfig();
       if (!config.linearApiKey) {
-        console.log(chalk.red('❌ Linear API key not configured. Run `team setup` first.'));
+        console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
         return;
       }
 

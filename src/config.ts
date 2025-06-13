@@ -1,11 +1,5 @@
-import Configstore from 'configstore';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import dotenv from 'dotenv';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { EnvManager } from './env-manager.js';
 
 dotenv.config();
 
@@ -13,25 +7,20 @@ interface Config {
   linearApiKey?: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
+  codaApiKey?: string;
   defaultAiProvider?: 'openai' | 'anthropic';
   defaultSummaryType?: 'brief' | 'detailed' | 'action-items';
   openaiModel?: string;
   anthropicModel?: string;
+  defaultCodaDocId?: string;
+  defaultCodaDocName?: string;
 }
 
 class ConfigManager {
-  private store: Configstore;
-  private packageInfo: any;
+  private envManager: EnvManager;
 
   constructor() {
-    try {
-      const packagePath = join(__dirname, '..', 'package.json');
-      this.packageInfo = JSON.parse(readFileSync(packagePath, 'utf8'));
-    } catch (error) {
-      this.packageInfo = { name: 'linear-ai-cli' };
-    }
-    
-    this.store = new Configstore(this.packageInfo.name);
+    this.envManager = new EnvManager();
   }
 
   getConfig(): Config {
@@ -39,70 +28,109 @@ class ConfigManager {
       linearApiKey: this.getLinearApiKey(),
       openaiApiKey: this.getOpenAIApiKey(),
       anthropicApiKey: this.getAnthropicApiKey(),
+      codaApiKey: this.getCodaApiKey(),
       defaultAiProvider: this.getDefaultAiProvider(),
       defaultSummaryType: this.getDefaultSummaryType(),
       openaiModel: this.getOpenAIModel(),
       anthropicModel: this.getAnthropicModel(),
+      defaultCodaDocId: this.getDefaultCodaDocId(),
+      defaultCodaDocName: this.getDefaultCodaDocName(),
     };
   }
 
   getLinearApiKey(): string | undefined {
-    return process.env.LINEAR_API_KEY || this.store.get('linearApiKey');
+    // Priority: .env file > environment variables
+    const envValues = this.envManager.readEnvFile();
+    return envValues.LINEAR_API_KEY || process.env.LINEAR_API_KEY;
   }
 
   setLinearApiKey(apiKey: string): void {
-    this.store.set('linearApiKey', apiKey);
+    this.envManager.updateEnvFile({ LINEAR_API_KEY: apiKey });
   }
 
   getOpenAIApiKey(): string | undefined {
-    return process.env.OPENAI_API_KEY || this.store.get('openaiApiKey');
+    const envValues = this.envManager.readEnvFile();
+    return envValues.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   }
 
   setOpenAIApiKey(apiKey: string): void {
-    this.store.set('openaiApiKey', apiKey);
+    this.envManager.updateEnvFile({ OPENAI_API_KEY: apiKey });
   }
 
   getAnthropicApiKey(): string | undefined {
-    return process.env.ANTHROPIC_API_KEY || this.store.get('anthropicApiKey');
+    const envValues = this.envManager.readEnvFile();
+    return envValues.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
   }
 
   setAnthropicApiKey(apiKey: string): void {
-    this.store.set('anthropicApiKey', apiKey);
+    this.envManager.updateEnvFile({ ANTHROPIC_API_KEY: apiKey });
+  }
+
+  getCodaApiKey(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.CODA_API_KEY || process.env.CODA_API_KEY;
+  }
+
+  setCodaApiKey(apiKey: string): void {
+    this.envManager.updateEnvFile({ CODA_API_KEY: apiKey });
+  }
+
+  getDefaultCodaDocId(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.DEFAULT_CODA_DOC_ID || process.env.DEFAULT_CODA_DOC_ID;
+  }
+
+  setDefaultCodaDocId(docId: string): void {
+    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_ID: docId });
+  }
+
+  getDefaultCodaDocName(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.DEFAULT_CODA_DOC_NAME || process.env.DEFAULT_CODA_DOC_NAME;
+  }
+
+  setDefaultCodaDocName(docName: string): void {
+    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_NAME: docName });
   }
 
   getDefaultAiProvider(): 'openai' | 'anthropic' {
-    const envProvider = process.env.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
-    const storedProvider = this.store.get('defaultAiProvider') as 'openai' | 'anthropic';
-    return envProvider || storedProvider || 'openai';
+    const envValues = this.envManager.readEnvFile();
+    const envProvider = envValues.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
+    const processProvider = process.env.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
+    return envProvider || processProvider || 'openai';
   }
 
   setDefaultAiProvider(provider: 'openai' | 'anthropic'): void {
-    this.store.set('defaultAiProvider', provider);
+    this.envManager.updateEnvFile({ DEFAULT_AI_PROVIDER: provider });
   }
 
   getDefaultSummaryType(): 'brief' | 'detailed' | 'action-items' {
-    const storedType = this.store.get('defaultSummaryType') as 'brief' | 'detailed' | 'action-items';
-    return storedType || 'brief';
+    const envValues = this.envManager.readEnvFile();
+    const envType = envValues.DEFAULT_SUMMARY_TYPE as 'brief' | 'detailed' | 'action-items';
+    const processType = process.env.DEFAULT_SUMMARY_TYPE as 'brief' | 'detailed' | 'action-items';
+    return envType || processType || 'brief';
   }
 
   setDefaultSummaryType(type: 'brief' | 'detailed' | 'action-items'): void {
-    this.store.set('defaultSummaryType', type);
+    this.envManager.updateEnvFile({ DEFAULT_SUMMARY_TYPE: type });
   }
 
   getOpenAIModel(): string {
-    return this.store.get('openaiModel') || 'gpt-4';
+    const envValues = this.envManager.readEnvFile();
+    return envValues.OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4';
   }
 
   setOpenAIModel(model: string): void {
-    this.store.set('openaiModel', model);
+    this.envManager.updateEnvFile({ OPENAI_MODEL: model });
   }
 
   getAnthropicModel(): string {
-    return this.store.get('anthropicModel') || 'claude-3-5-sonnet-20241022';
+    const envValues = this.envManager.readEnvFile();
+    return envValues.ANTHROPIC_MODEL || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
   }
 
   setAnthropicModel(model: string): void {
-    this.store.set('anthropicModel', model);
+    this.envManager.updateEnvFile({ ANTHROPIC_MODEL: model });
   }
 
   hasRequiredConfig(): boolean {
@@ -129,17 +157,26 @@ class ConfigManager {
   }
 
   clearConfig(): void {
-    this.store.clear();
+    this.envManager.clearEnvFile();
   }
 
   showConfig(): Config {
     const config = this.getConfig();
     return {
       ...config,
-      linearApiKey: config.linearApiKey ? '***' + config.linearApiKey.slice(-4) : undefined,
-      openaiApiKey: config.openaiApiKey ? '***' + config.openaiApiKey.slice(-4) : undefined,
-      anthropicApiKey: config.anthropicApiKey ? '***' + config.anthropicApiKey.slice(-4) : undefined,
+      linearApiKey: this.envManager.maskValue(config.linearApiKey),
+      openaiApiKey: this.envManager.maskValue(config.openaiApiKey),
+      anthropicApiKey: this.envManager.maskValue(config.anthropicApiKey),
+      codaApiKey: this.envManager.maskValue(config.codaApiKey),
     };
+  }
+
+  getEnvFilePath(): string {
+    return this.envManager.getEnvPath();
+  }
+
+  envFileExists(): boolean {
+    return this.envManager.envFileExists();
   }
 }
 
