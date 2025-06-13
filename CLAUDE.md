@@ -3,6 +3,7 @@
 ## Coda Data Analysis Approach
 - **ALWAYS** search and analyze Coda data by reading markdown files directly from `data/coda/` directory
 - **DO NOT** use the `team coda ask` command unless explicitly requested by the user
+- **DO NOT** incorporate information from incident reports unless explicitly requested by the user
 - Use grep, find, and direct file reading to gather information from the markdown files
 - Pass the complete relevant content from coda files as context when answering questions
 
