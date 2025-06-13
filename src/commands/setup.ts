@@ -176,6 +176,60 @@ export function createSetupCommand(): Command {
           spinner.stop();
           console.log(chalk.green(`✓ Coda API key validated for ${user.name}`));
           codaKey = response.codaKey;
+
+          // Document selection
+          const { selectDocument } = await inquirer.prompt([
+            {
+              type: 'confirm',
+              name: 'selectDocument',
+              message: 'Would you like to select a default document to focus on for AI queries?',
+              default: true,
+            },
+          ]);
+
+          if (selectDocument) {
+            try {
+              const docsSpinner = ora('Fetching your Coda documents...').start();
+              const docsResponse = await codaClient.listDocs(50);
+              docsSpinner.stop();
+
+              if (docsResponse.items.length === 0) {
+                console.log(chalk.yellow('No documents found in your Coda workspace.'));
+              } else {
+                const choices: Array<{name: string, value: any, short: string}> = docsResponse.items.map(doc => ({
+                  name: `${doc.name} (${doc.workspace.name}) - Updated: ${new Date(doc.updatedAt).toLocaleDateString()}`,
+                  value: doc,
+                  short: doc.name
+                }));
+
+                choices.push({
+                  name: 'Search all documents (no default)',
+                  value: 'no-default',
+                  short: 'No default'
+                });
+
+                const { selectedDoc } = await inquirer.prompt([
+                  {
+                    type: 'list',
+                    name: 'selectedDoc',
+                    message: 'Select a default document for AI queries:',
+                    choices,
+                    pageSize: 10,
+                  },
+                ]);
+
+                if (selectedDoc !== 'no-default') {
+                  configManager.setDefaultCodaDocId(selectedDoc.id);
+                  configManager.setDefaultCodaDocName(selectedDoc.name);
+                  console.log(chalk.green(`✓ Default document set to "${selectedDoc.name}"`));
+                } else {
+                  console.log(chalk.blue('✓ No default document selected - will search all documents'));
+                }
+              }
+            } catch (error) {
+              console.log(chalk.yellow('Could not fetch documents for selection - continuing setup'));
+            }
+          }
         } catch (error) {
           console.log(chalk.red('✗ Invalid Coda API key - saving anyway for troubleshooting'));
           console.log(chalk.yellow('You can test connectivity with: team config check'));

@@ -7,6 +7,11 @@ interface EnvValues {
   ANTHROPIC_API_KEY?: string;
   CODA_API_KEY?: string;
   DEFAULT_AI_PROVIDER?: string;
+  DEFAULT_CODA_DOC_ID?: string;
+  DEFAULT_CODA_DOC_NAME?: string;
+  DEFAULT_SUMMARY_TYPE?: string;
+  OPENAI_MODEL?: string;
+  ANTHROPIC_MODEL?: string;
 }
 
 export class EnvManager {
@@ -128,6 +133,26 @@ export class EnvManager {
     if (values.DEFAULT_AI_PROVIDER) {
       content += `DEFAULT_AI_PROVIDER=${values.DEFAULT_AI_PROVIDER}\n`;
     }
+    
+    if (values.DEFAULT_CODA_DOC_ID) {
+      content += `DEFAULT_CODA_DOC_ID=${values.DEFAULT_CODA_DOC_ID}\n`;
+    }
+    
+    if (values.DEFAULT_CODA_DOC_NAME) {
+      content += `DEFAULT_CODA_DOC_NAME=${values.DEFAULT_CODA_DOC_NAME}\n`;
+    }
+    
+    if (values.DEFAULT_SUMMARY_TYPE) {
+      content += `DEFAULT_SUMMARY_TYPE=${values.DEFAULT_SUMMARY_TYPE}\n`;
+    }
+    
+    if (values.OPENAI_MODEL) {
+      content += `OPENAI_MODEL=${values.OPENAI_MODEL}\n`;
+    }
+    
+    if (values.ANTHROPIC_MODEL) {
+      content += `ANTHROPIC_MODEL=${values.ANTHROPIC_MODEL}\n`;
+    }
 
     try {
       writeFileSync(this.envPath, content, 'utf8');
@@ -185,6 +210,19 @@ export class EnvManager {
         return key.length > 10; // Coda keys don't have a specific prefix
       default:
         return false;
+    }
+  }
+
+  /**
+   * Clear the .env file (remove it)
+   */
+  clearEnvFile(): void {
+    if (existsSync(this.envPath)) {
+      try {
+        writeFileSync(this.envPath, '', 'utf8');
+      } catch (error) {
+        throw new Error(`Could not clear .env file: ${error}`);
+      }
     }
   }
 }

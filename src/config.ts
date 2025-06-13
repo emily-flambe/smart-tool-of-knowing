@@ -1,12 +1,5 @@
-import Configstore from 'configstore';
-import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
 import dotenv from 'dotenv';
 import { EnvManager } from './env-manager.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 dotenv.config();
 
@@ -19,22 +12,14 @@ interface Config {
   defaultSummaryType?: 'brief' | 'detailed' | 'action-items';
   openaiModel?: string;
   anthropicModel?: string;
+  defaultCodaDocId?: string;
+  defaultCodaDocName?: string;
 }
 
 class ConfigManager {
-  private store: Configstore;
-  private packageInfo: any;
   private envManager: EnvManager;
 
   constructor() {
-    try {
-      const packagePath = join(__dirname, '..', 'package.json');
-      this.packageInfo = JSON.parse(readFileSync(packagePath, 'utf8'));
-    } catch (error) {
-      this.packageInfo = { name: 'linear-ai-cli' };
-    }
-    
-    this.store = new Configstore(this.packageInfo.name);
     this.envManager = new EnvManager();
   }
 
@@ -48,13 +33,15 @@ class ConfigManager {
       defaultSummaryType: this.getDefaultSummaryType(),
       openaiModel: this.getOpenAIModel(),
       anthropicModel: this.getAnthropicModel(),
+      defaultCodaDocId: this.getDefaultCodaDocId(),
+      defaultCodaDocName: this.getDefaultCodaDocName(),
     };
   }
 
   getLinearApiKey(): string | undefined {
-    // Priority: .env file > environment variables > configstore
+    // Priority: .env file > environment variables
     const envValues = this.envManager.readEnvFile();
-    return envValues.LINEAR_API_KEY || process.env.LINEAR_API_KEY || this.store.get('linearApiKey');
+    return envValues.LINEAR_API_KEY || process.env.LINEAR_API_KEY;
   }
 
   setLinearApiKey(apiKey: string): void {
@@ -63,7 +50,7 @@ class ConfigManager {
 
   getOpenAIApiKey(): string | undefined {
     const envValues = this.envManager.readEnvFile();
-    return envValues.OPENAI_API_KEY || process.env.OPENAI_API_KEY || this.store.get('openaiApiKey');
+    return envValues.OPENAI_API_KEY || process.env.OPENAI_API_KEY;
   }
 
   setOpenAIApiKey(apiKey: string): void {
@@ -72,7 +59,7 @@ class ConfigManager {
 
   getAnthropicApiKey(): string | undefined {
     const envValues = this.envManager.readEnvFile();
-    return envValues.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY || this.store.get('anthropicApiKey');
+    return envValues.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY;
   }
 
   setAnthropicApiKey(apiKey: string): void {
@@ -81,19 +68,36 @@ class ConfigManager {
 
   getCodaApiKey(): string | undefined {
     const envValues = this.envManager.readEnvFile();
-    return envValues.CODA_API_KEY || process.env.CODA_API_KEY || this.store.get('codaApiKey');
+    return envValues.CODA_API_KEY || process.env.CODA_API_KEY;
   }
 
   setCodaApiKey(apiKey: string): void {
     this.envManager.updateEnvFile({ CODA_API_KEY: apiKey });
   }
 
+  getDefaultCodaDocId(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.DEFAULT_CODA_DOC_ID || process.env.DEFAULT_CODA_DOC_ID;
+  }
+
+  setDefaultCodaDocId(docId: string): void {
+    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_ID: docId });
+  }
+
+  getDefaultCodaDocName(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.DEFAULT_CODA_DOC_NAME || process.env.DEFAULT_CODA_DOC_NAME;
+  }
+
+  setDefaultCodaDocName(docName: string): void {
+    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_NAME: docName });
+  }
+
   getDefaultAiProvider(): 'openai' | 'anthropic' {
     const envValues = this.envManager.readEnvFile();
     const envProvider = envValues.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
     const processProvider = process.env.DEFAULT_AI_PROVIDER as 'openai' | 'anthropic';
-    const storedProvider = this.store.get('defaultAiProvider') as 'openai' | 'anthropic';
-    return envProvider || processProvider || storedProvider || 'openai';
+    return envProvider || processProvider || 'openai';
   }
 
   setDefaultAiProvider(provider: 'openai' | 'anthropic'): void {
@@ -101,28 +105,32 @@ class ConfigManager {
   }
 
   getDefaultSummaryType(): 'brief' | 'detailed' | 'action-items' {
-    const storedType = this.store.get('defaultSummaryType') as 'brief' | 'detailed' | 'action-items';
-    return storedType || 'brief';
+    const envValues = this.envManager.readEnvFile();
+    const envType = envValues.DEFAULT_SUMMARY_TYPE as 'brief' | 'detailed' | 'action-items';
+    const processType = process.env.DEFAULT_SUMMARY_TYPE as 'brief' | 'detailed' | 'action-items';
+    return envType || processType || 'brief';
   }
 
   setDefaultSummaryType(type: 'brief' | 'detailed' | 'action-items'): void {
-    this.store.set('defaultSummaryType', type);
+    this.envManager.updateEnvFile({ DEFAULT_SUMMARY_TYPE: type });
   }
 
   getOpenAIModel(): string {
-    return this.store.get('openaiModel') || 'gpt-4';
+    const envValues = this.envManager.readEnvFile();
+    return envValues.OPENAI_MODEL || process.env.OPENAI_MODEL || 'gpt-4';
   }
 
   setOpenAIModel(model: string): void {
-    this.store.set('openaiModel', model);
+    this.envManager.updateEnvFile({ OPENAI_MODEL: model });
   }
 
   getAnthropicModel(): string {
-    return this.store.get('anthropicModel') || 'claude-3-5-sonnet-20241022';
+    const envValues = this.envManager.readEnvFile();
+    return envValues.ANTHROPIC_MODEL || process.env.ANTHROPIC_MODEL || 'claude-3-5-sonnet-20241022';
   }
 
   setAnthropicModel(model: string): void {
-    this.store.set('anthropicModel', model);
+    this.envManager.updateEnvFile({ ANTHROPIC_MODEL: model });
   }
 
   hasRequiredConfig(): boolean {
@@ -149,7 +157,7 @@ class ConfigManager {
   }
 
   clearConfig(): void {
-    this.store.clear();
+    this.envManager.clearEnvFile();
   }
 
   showConfig(): Config {

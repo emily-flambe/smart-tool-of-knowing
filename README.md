@@ -12,17 +12,22 @@ A comprehensive command-line interface that integrates Linear, Coda, and AI prov
 - Planning analysis with workload distribution
 
 📚 **Coda Integration**
-- List and search Coda documents
-- View document details and tables
-- Access team documentation and knowledge base
-- Seamless document discovery
+- List and search Coda documents and pages
+- Extract page content to local markdown files
+- View document details, pages, and subpages with hierarchical display
+- AI-powered Q&A with RAG (Retrieval-Augmented Generation) service
+- Local database caching with SQLite for fast searches
+- Bulk content extraction with filtering options
+- Seamless document discovery and content management
 
-🤖 **AI-Powered Summarization**
+🤖 **AI-Powered Analysis**
 - Summarize individual issues, cycles, projects, or teams
-- Support for OpenAI (GPT-4) and Anthropic (Claude)
+- Ask questions about your Coda documentation using natural language
+- Support for OpenAI (GPT-4) and Anthropic (Claude) with configurable models
 - Multiple summary types: brief, detailed, action-items
 - Group summaries by project, assignee, or priority
 - Automatic metrics calculation
+- RAG-powered document search and Q&A
 
 📊 **Rich Output**
 - Colorized and formatted output
@@ -122,6 +127,7 @@ team linear planning
 ```bash
 # List Coda documents
 team coda list-docs
+team coda list-docs --limit 10
 
 # Search documents
 team coda search-docs "project planning"
@@ -130,8 +136,31 @@ team coda search-docs "meeting notes" --limit 5
 # Show document details
 team coda show-doc DOC-12345
 
-# List document tables
-team coda show-doc DOC-12345
+# List pages in default document
+team coda list-pages
+team coda list-pages --limit 20
+
+# List pages with URLs for easy access
+team coda list-pages-urls
+
+# Browse page hierarchy interactively
+team coda list-subpages
+
+# Extract single page content
+team coda extract-page --url https://coda.io/d/_dDocId/_suPageId
+
+# Extract all pages to markdown files
+team coda extract-all
+team coda extract-all --force --limit 50
+team coda extract-all --exclude-subpages --exclude-hidden
+
+# Extract and index content for AI search
+team coda extract
+
+# Ask AI questions about your documentation
+team coda ask "What are our working hours?"
+team coda ask "How do I set up the development environment?"
+team coda ask "What is the incident response process?"
 ```
 
 ### AI Summarization
@@ -223,6 +252,13 @@ team config clear
 | `team coda list-docs` | List Coda documents | `--limit <n>` |
 | `team coda search-docs` | Search Coda documents | `<query>`, `--limit <n>` |
 | `team coda show-doc` | Show document details | `<doc-id>` |
+| `team coda list-pages` | List pages in default document | `--limit <n>`, `--doc-id <id>` |
+| `team coda list-pages-urls` | List pages with browser URLs | `--limit <n>`, `--doc-id <id>` |
+| `team coda list-subpages` | Interactive subpage browser | `--doc-id <id>` |
+| `team coda extract-page` | Extract single page to markdown | `--url <coda-url>`, `--force` |
+| `team coda extract-all` | Extract all pages to markdown files | `--force`, `--limit <n>`, `--exclude-subpages`, `--exclude-hidden`, `--min-content-length <n>` |
+| `team coda extract` | Extract and index content for AI | `--include-table-data`, `--max-documents <n>`, `--force-refresh` |
+| `team coda ask` | Ask AI questions about documents | `<question>`, `--include-table-data`, `--focus-on-default-doc`, `--refresh-cache`, `--use-full-content` |
 
 ### Options Reference
 
@@ -268,8 +304,55 @@ team linear list issues --team TEAM-123 --limit 10
 # Search team documentation
 team coda search-docs "sprint planning" --limit 5
 
+# Extract all pages with filters
+team coda extract-all --exclude-subpages --exclude-hidden --min-content-length 100
+
+# AI Q&A on your documentation with full content context
+team coda ask "What is the onboarding process for new engineers?" --use-full-content
+
+# Ask about specific document only
+team coda ask "What are the deployment procedures?" --focus-on-default-doc
+
+# Refresh content cache and ask question
+team coda ask "Latest security guidelines" --refresh-cache
+
 # Summarize specific issue
 team linear summarize issue LIN-456
+```
+
+## Data Storage
+
+### Coda Content Storage
+
+The CLI provides multiple ways to store and access Coda content:
+
+#### Local Markdown Files (`data/coda/`)
+- Extracted pages are saved as markdown files in `data/coda/`
+- Files include full metadata in frontmatter (title, URLs, timestamps, hierarchy)
+- Safe filename generation prevents conflicts and special character issues
+- Perfect for version control, offline access, and external tool integration
+
+#### SQLite Database (`coda-cache.db`)
+- Local SQLite database stores page content with metadata
+- Enables fast searching and caching of extracted content
+- Used by the AI Q&A system for semantic search
+- Automatically managed by the CLI
+
+#### AI-Powered Search
+- RAG (Retrieval-Augmented Generation) service processes content for semantic search
+- Vector embeddings enable intelligent content discovery
+- Ask natural language questions about your documentation
+- Configurable search scope and content inclusion options
+
+```bash
+# Extract to both markdown files and database
+team coda extract-all
+
+# Extract single page to both formats
+team coda extract-page --url https://coda.io/d/_dDocId/_suPageId
+
+# Use AI to search and answer questions
+team coda ask "How do I configure the development environment?"
 ```
 
 ## Configuration
@@ -281,6 +364,8 @@ LINEAR_API_KEY=lin_api_your_key
 OPENAI_API_KEY=sk-your_openai_key
 ANTHROPIC_API_KEY=sk-ant-your_anthropic_key
 CODA_API_KEY=your_coda_api_key
+DEFAULT_CODA_DOC_ID=your_default_doc_id
+DEFAULT_CODA_DOC_NAME=Your Default Document Name
 DEFAULT_AI_PROVIDER=openai
 ```
 

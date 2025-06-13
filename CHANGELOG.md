@@ -5,6 +5,100 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2025-06-13
+
+### 🚀 Major Features
+
+#### Comprehensive Coda Integration
+- **Complete Coda API Integration**: Full integration with Coda's REST API for document and page management
+- **AI-Powered Document Q&A**: RAG (Retrieval-Augmented Generation) service for natural language queries against your documentation
+- **Local Content Storage**: Dual storage system with SQLite database and markdown files for offline access
+
+### ✨ Added
+
+#### New Coda Commands
+- `team coda list-pages` - List pages in your default Coda document with pagination support
+- `team coda list-pages-urls` - List pages with their browser URLs for easy reference and sharing
+- `team coda list-subpages` - Interactive hierarchical browser for exploring page relationships
+- `team coda extract-page --url <url>` - Extract single page content to both markdown file and database
+- `team coda extract-all` - Bulk extract all pages to markdown files with advanced filtering options
+- `team coda extract` - Extract and index content for AI-powered search
+- `team coda ask <question>` - Ask natural language questions about your documentation
+
+#### Enhanced Content Extraction
+- **Async Export Support**: Robust handling of Coda's async export API with proper polling and retry logic
+- **Markdown File Generation**: Pages saved as properly formatted markdown with comprehensive metadata frontmatter
+- **Safe Filename Generation**: Handles special characters and prevents filename conflicts
+- **Hierarchical Organization**: Preserves parent-child relationships in filenames and metadata
+- **Content Filtering**: Skip empty pages, hidden content, and apply minimum content length filters
+
+#### Advanced Filtering Options for `extract-all`
+- `--exclude-subpages` - Extract only top-level pages
+- `--include-hidden` - Include pages that appear to be hidden or private (default: exclude)
+- `--min-content-length <n>` - Skip pages with less than specified character count
+- `--force` - Force re-extraction of existing content
+- `--limit <n>` - Limit number of pages to process
+
+#### RAG (Retrieval-Augmented Generation) Service
+- **Semantic Search**: Vector embeddings for intelligent content discovery
+- **Configurable Context**: Control search scope and content inclusion
+- **Multiple Search Modes**: Focus on default document or search across all indexed content
+- **Cache Management**: Intelligent caching with refresh options
+- **Full Content Mode**: Include complete page content in AI context when needed
+
+#### AI Q&A Options for `team coda ask`
+- `--include-table-data` - Include table content in search context
+- `--focus-on-default-doc` - Limit search to the default document only
+- `--refresh-cache` - Force refresh of cached content before querying
+- `--use-full-content` - Use complete page content instead of summaries
+
+#### Enhanced Configuration Management
+- **Default Document Configuration**: Set and manage default Coda document for operations
+- **Environment Variable Support**: `DEFAULT_CODA_DOC_ID` and `DEFAULT_CODA_DOC_NAME` configuration
+- **Interactive Setup Integration**: Coda API validation and default document selection in setup wizard
+
+#### Data Storage Systems
+- **SQLite Database (`coda-cache.db`)**: Local database for fast content search and caching
+- **Markdown Files (`data/coda/`)**: Structured markdown files with frontmatter metadata
+- **Vector Embeddings**: AI-powered semantic search capabilities
+- **Metadata Preservation**: Complete preservation of page hierarchy, timestamps, and URLs
+
+### 🔧 Technical Improvements
+
+#### Robust API Integration
+- **Exponential Backoff**: Intelligent retry logic for API failures
+- **Rate Limiting**: Proper handling of Coda API rate limits with delays
+- **Error Recovery**: Comprehensive error handling with user-friendly messages
+- **URL Parsing**: Smart parsing of various Coda URL formats
+- **Progress Indicators**: Real-time progress tracking for long operations
+
+#### Performance Optimizations
+- **Concurrent Operations**: Parallel processing where possible while respecting rate limits
+- **Smart Caching**: Avoid re-processing unchanged content
+- **Incremental Updates**: Update only modified pages during bulk extractions
+- **Memory Efficiency**: Streaming content processing for large documents
+
+#### Developer Experience
+- **Comprehensive Logging**: Detailed operation logs for debugging
+- **Status Indicators**: Clear visual feedback for all operations
+- **Error Messages**: Helpful error messages with suggested solutions
+- **Documentation**: Updated README with complete Coda integration examples
+
+### 📊 Enhanced User Experience
+- **Progress Tracking**: Real-time progress bars for bulk operations
+- **Hierarchical Display**: Visual representation of page relationships
+- **Content Statistics**: Display content length, extraction timestamps, and update status
+- **Interactive Browsing**: Easy navigation through document structures
+- **Rich Metadata**: Complete page information including creation dates, update times, and URLs
+
+### 🎯 New Use Cases
+- **Knowledge Base Q&A**: Ask questions about your team documentation in natural language
+- **Onboarding Documentation**: Extract and organize onboarding materials for new team members
+- **Content Archival**: Create local backups of important documentation
+- **Offline Documentation Access**: Work with documentation without internet connectivity
+- **Documentation Search**: Semantic search across all your Coda content
+- **Content Analysis**: Analyze documentation patterns and identify gaps
+
 ## [1.0.0] - 2025-01-11
 
 ### 🎉 Initial Release

@@ -141,9 +141,12 @@ program.on('--help', () => {
   console.log('  $ team linear summarize cycle           AI cycle summary');
   console.log();
   console.log(chalk.yellow('Coda Integration:'));
-  console.log('  $ team coda list-docs                   List Coda documents');
+  console.log('  $ team coda list-pages                  List pages in default document');
+  console.log('  $ team coda list-subpages               Select a page and view its subpages');
+  console.log('  $ team coda list-docs                   List all Coda documents');
   console.log('  $ team coda search-docs "project"       Search documents');
   console.log('  $ team coda show-doc DOC-ID             Show document details');
+  console.log('  $ team coda ask "question"              Ask AI about your documents');
   console.log();
   console.log(chalk.yellow('AI Models:'));
   console.log('  $ team models list                      Available AI models');
@@ -168,7 +171,8 @@ if (process.argv.length === 2) {
     console.log();
     console.log('Try these commands:');
     console.log(chalk.green('  team linear list cycles     ') + '- List Linear cycles');
-    console.log(chalk.green('  team coda list-docs         ') + '- List Coda documents');
+    console.log(chalk.green('  team coda list-pages        ') + '- List pages in default document');
+    console.log(chalk.green('  team coda list-docs         ') + '- List all Coda documents');
     console.log();
     console.log('Or see all available commands:');
     console.log(chalk.green('  team --help'));
