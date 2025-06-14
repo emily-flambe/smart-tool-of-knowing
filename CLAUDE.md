@@ -69,6 +69,17 @@
 - Main commands are under `team coda` namespace
 - Data extraction and RAG (Retrieval-Augmented Generation) services are available
 
+## Conversation Logging
+- **ALWAYS** maintain an ongoing log of our chat conversations
+- Record user queries in their entirety with timestamps
+- Record Claude Code responses (first/last lines or summary) grouped with each query
+- Log all significant commands executed
+- Use this log as context across different conversations to maintain continuity
+- Store conversation logs to help track project evolution and decision history
+- **Format:** `**HH:MM:SS** User: [query]` followed by `Claude: [response summary]`
+- **Sessions:** Track new chat sessions with `### Session N` headers
+- **Log file location:** `conversation-log.md` (root of project, excluded from git)
+
 ## Commands to Remember
 - Build project: `npm run build`
 - Lint/typecheck: Check package.json scripts for available lint commands
