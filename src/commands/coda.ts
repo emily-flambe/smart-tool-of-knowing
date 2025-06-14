@@ -17,6 +17,7 @@ export function createCodaCommand(): Command {
     .addCommand(createListPagesCommand())
     .addCommand(createListPagesWithUrlsCommand())
     .addCommand(createListSubpagesCommand())
+    .addCommand(createListSubpagesWithUrlsCommand())
     .addCommand(createListDocsCommand())
     .addCommand(createSearchDocsCommand())
     .addCommand(createShowDocCommand())
@@ -279,6 +280,111 @@ function createListSubpagesCommand(): Command {
             content: chalk.bold.blue(`Subpages of "${selectedPage.name}"`)
           }
         }));
+
+      } catch (error: any) {
+        console.log(chalk.red(`✗ Error fetching pages: ${error.message}`));
+        
+        if (error.message.includes('Not Found')) {
+          console.log(chalk.yellow('The document may not exist or you may not have access to it.'));
+          console.log('Run `team coda list-docs` to see available documents.');
+        }
+      }
+    });
+}
+
+function createListSubpagesWithUrlsCommand(): Command {
+  return new Command('list-subpages-urls')
+    .description('Select a page and view its subpages with URLs')
+    .option('--doc-id <docId>', 'Specify document ID (overrides default)')
+    .action(async (options) => {
+      const codaApiKey = configManager.getCodaApiKey();
+      
+      if (!codaApiKey) {
+        console.log(chalk.red('✗ Coda API key not configured'));
+        console.log('Run `team config setup` to configure your Coda API key');
+        return;
+      }
+
+      // Determine which document to use
+      let docId = options.docId;
+      let docName = 'Specified Document';
+      
+      if (!docId) {
+        docId = configManager.getDefaultCodaDocId();
+        docName = configManager.getDefaultCodaDocName() || 'Default Document';
+        
+        if (!docId) {
+          console.log(chalk.red('✗ No default document configured'));
+          console.log('Run `team config setup` to select a default document');
+          console.log('Or use --doc-id to specify a document');
+          return;
+        }
+      }
+
+      const codaClient = new CodaClient(codaApiKey);
+
+      try {
+        // Step 1: Fetch all pages
+        const spinner = ora(`Fetching pages from ${docName}...`).start();
+        const pagesResponse = await codaClient.listPages(docId, 50);
+        spinner.stop();
+
+        if (pagesResponse.items.length === 0) {
+          console.log(chalk.yellow('No pages found in this document'));
+          return;
+        }
+
+        // Step 2: Let user select a page
+        const choices = pagesResponse.items.map(page => ({
+          name: `${page.name} (${page.contentType || 'page'}) - Updated: ${new Date(page.updatedAt).toLocaleDateString()}`,
+          value: page,
+          short: page.name
+        }));
+
+        const { selectedPage } = await inquirer.prompt([
+          {
+            type: 'list',
+            name: 'selectedPage',
+            message: 'Select a page to view its subpages with URLs:',
+            choices,
+            pageSize: 12,
+          },
+        ]);
+
+        // Step 3: Find subpages (pages that have this page as parent)
+        const subpages = pagesResponse.items.filter(page => 
+          page.parent && page.parent.id === selectedPage.id
+        );
+
+        console.log();
+        if (subpages.length === 0) {
+          console.log(chalk.yellow(`📄 "${selectedPage.name}" has no subpages`));
+          return;
+        }
+
+        console.log(chalk.blue(`🔗 Subpages of "${selectedPage.name}" with URLs (${subpages.length} found):`));
+        console.log();
+
+        // Step 4: Get URLs for each subpage
+        for (const page of subpages) {
+          try {
+            const pageInfo = await codaClient.getPage(docId, page.id);
+            const browserLink = (pageInfo as any).browserLink || 'No URL available';
+            
+            console.log(`${chalk.bold(page.name)}`);
+            console.log(`  ID: ${page.id}`);
+            console.log(`  URL: ${chalk.blue(browserLink)}`);
+            console.log(`  Type: ${page.contentType || 'page'}`);
+            console.log(`  Updated: ${new Date(page.updatedAt).toLocaleDateString()}`);
+            console.log();
+          } catch (error: any) {
+            console.log(`${chalk.bold(page.name)} - Error fetching URL: ${error.message}`);
+            console.log(`  ID: ${page.id}`);
+            console.log(`  Type: ${page.contentType || 'page'}`);
+            console.log(`  Updated: ${new Date(page.updatedAt).toLocaleDateString()}`);
+            console.log();
+          }
+        }
 
       } catch (error: any) {
         console.log(chalk.red(`✗ Error fetching pages: ${error.message}`));

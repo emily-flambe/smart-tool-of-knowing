@@ -11,6 +11,7 @@ import { createSummarizeCommand } from './commands/summarize.js';
 import { createModelsCommand } from './commands/models.js';
 import { createPlanningCommand } from './commands/planning.js';
 import { createCodaCommand } from './commands/coda.js';
+import { createUnifiedCommand } from './commands/unified.js';
 import { configManager } from './config.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -28,7 +29,7 @@ const program = new Command();
 
 program
   .name('team')
-  .description('Team Knowledge CLI - Integrate Linear, Coda, and AI for comprehensive team insights')
+  .description('Team Knowledge CLI - Unified data integration across Linear, Coda, and GitHub with AI-powered insights')
   .version(packageInfo.version);
 
 // Add commands
@@ -44,6 +45,9 @@ program.addCommand(linearCommand);
 
 // Coda system commands
 program.addCommand(createCodaCommand());
+
+// Unified data commands
+program.addCommand(createUnifiedCommand());
 
 // Models command (global)
 program.addCommand(createModelsCommand());
@@ -140,6 +144,12 @@ program.on('--help', () => {
   console.log('  $ team linear planning                  Planning analysis');
   console.log('  $ team linear summarize cycle           AI cycle summary');
   console.log();
+  console.log(chalk.yellow('Unified Data Integration:'));
+  console.log('  $ team unified sync                     Sync data from all sources');
+  console.log('  $ team unified query --search "auth"    Search across all data');
+  console.log('  $ team unified newsletter               Generate activity report');
+  console.log('  $ team unified status                   Check data source status');
+  console.log();
   console.log(chalk.yellow('Coda Integration:'));
   console.log('  $ team coda list-pages                  List pages in default document');
   console.log('  $ team coda list-subpages               Select a page and view its subpages');
@@ -170,9 +180,10 @@ if (process.argv.length === 2) {
     console.log(chalk.green('  team config check           ') + '- Check API status');
     console.log();
     console.log('Try these commands:');
+    console.log(chalk.green('  team unified status         ') + '- Check data source connections');
+    console.log(chalk.green('  team unified sync           ') + '- Sync data from all sources');
     console.log(chalk.green('  team linear list cycles     ') + '- List Linear cycles');
     console.log(chalk.green('  team coda list-pages        ') + '- List pages in default document');
-    console.log(chalk.green('  team coda list-docs         ') + '- List all Coda documents');
     console.log();
     console.log('Or see all available commands:');
     console.log(chalk.green('  team --help'));
