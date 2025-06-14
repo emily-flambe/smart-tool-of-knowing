@@ -6,11 +6,61 @@ The unified data layer provides a single interface to search, sync, and analyze 
 
 ## Quick Start
 
+### Step 1: Configure Your Data Sources
+
+Before you can use the unified data layer, you need to set up each data source. The unified layer doesn't automatically have access to your data - you need to configure API keys and data locations.
+
 ```bash
-# 1. Check what sources are configured
+# Interactive setup for all sources
+team config setup
+```
+
+**OR configure each source individually:**
+
+```bash
+# Coda: Set data directory (where Coda markdown files are stored)
+team config set CODA_DATA_DIRECTORY ./data/coda
+
+# Linear: Set API token
+team config set LINEAR_API_KEY your_linear_api_token
+
+# GitHub: Set token and repositories
+team config set GITHUB_TOKEN your_github_token
+team config set GITHUB_REPOSITORIES "owner/repo1,owner/repo2"
+```
+
+### Step 2: Extract/Prepare Data from Each Source
+
+#### For Coda:
+```bash
+# FIRST: Extract Coda data to markdown files
+team coda extract-all
+
+# This creates markdown files in ./data/coda/ that the unified layer reads
+# The unified layer uses these existing files, not the Coda API directly
+```
+
+#### For Linear:
+```bash
+# Linear data is extracted directly via API - no preparation needed
+# Just make sure your LINEAR_API_KEY is configured
+team config show  # Verify Linear key is set
+```
+
+#### For GitHub:
+```bash
+# GitHub data is extracted directly via API - no preparation needed
+# Just make sure your GITHUB_TOKEN is configured
+team config show  # Verify GitHub token is set
+```
+
+### Step 3: Use the Unified Data Layer
+
+```bash
+# 1. Check what sources are configured and connected
 team unified status
 
-# 2. Sync data from all sources
+# 2. Sync data from all sources INTO the unified database
 team unified sync
 
 # 3. Search across everything
@@ -260,38 +310,74 @@ sourceMetadata: {
 
 ## Configuration
 
-### Setting Up Data Sources
+### Complete Setup Process
 
-#### Coda Configuration
+The unified data layer requires proper configuration and data extraction from each source. Here's the complete process:
+
+#### 1. Get API Keys
+- **Linear**: Get your API key from [Linear Settings > API](https://linear.app/settings/api)
+- **GitHub**: Get a personal access token from [GitHub Settings > Developer settings](https://github.com/settings/tokens) with `repo` scope
+- **Coda**: Get your API key from [Coda Account Settings](https://coda.io/account) (needed for initial extraction)
+
+#### 2. Configure the CLI
 ```bash
-# Set the data directory (where markdown files are stored)
-team config set CODA_DATA_DIRECTORY ./data/coda
+# Interactive setup (recommended)
+team config setup
 
-# The unified layer uses existing Coda markdown files
-# Make sure you've extracted Coda data first:
-team coda extract-all
-```
-
-#### Linear Configuration
-```bash
-# Set your Linear API token
-team config set LINEAR_API_KEY your_token_here
-
-# The unified layer will extract:
-# - All teams and projects
-# - Recent cycles (last 6 months)
-# - Issues for each team
-```
-
-#### GitHub Configuration
-```bash
-# Set your GitHub token
-team config set GITHUB_TOKEN your_token_here
-
-# Optionally specify repositories to monitor
+# OR set individually:
+team config set LINEAR_API_KEY your_linear_api_token
+team config set GITHUB_TOKEN your_github_token
 team config set GITHUB_REPOSITORIES "owner/repo1,owner/repo2"
+team config set CODA_API_KEY your_coda_api_token
+team config set CODA_DATA_DIRECTORY ./data/coda
+```
 
-# If no repositories specified, will use all accessible repos
+#### 3. Extract Data from Each Source
+
+**IMPORTANT**: The unified layer doesn't automatically have your data. You must first extract it:
+
+##### Coda Data Extraction
+```bash
+# STEP 1: Extract Coda data to markdown files
+team coda extract-all
+
+# This downloads all your Coda pages as markdown files to ./data/coda/
+# The unified layer reads these files, not the Coda API directly
+# You only need to do this once, then periodically to get updates
+```
+
+##### Linear Data Extraction
+```bash
+# Linear data is extracted automatically during sync
+# No separate extraction step needed
+# The unified layer uses Linear API directly during sync
+```
+
+##### GitHub Data Extraction
+```bash
+# GitHub data is extracted automatically during sync
+# No separate extraction step needed
+# The unified layer uses GitHub API directly during sync
+```
+
+#### 4. Sync Into Unified Database
+```bash
+# Now sync everything into the unified database
+team unified sync
+
+# This reads:
+# - Coda markdown files from ./data/coda/
+# - Linear data via API
+# - GitHub data via API
+# And stores everything in ./data/unified.db
+```
+
+### Data Flow Summary
+
+```
+Coda API → team coda extract-all → ./data/coda/*.md → team unified sync → ./data/unified.db
+Linear API → team unified sync → ./data/unified.db
+GitHub API → team unified sync → ./data/unified.db
 ```
 
 ### Database Location
@@ -369,18 +455,74 @@ team unified query --search "connection timeout" --sources github,linear
 
 ## Troubleshooting
 
+### "No Data" Issues
+
+**Problem**: `team unified query` returns no results or shows 0 total items.
+
+**Solution**: You haven't extracted/synced data yet.
+
+```bash
+# 1. Check if you have any data
+team unified status
+
+# 2. For Coda: Extract data first
+team coda extract-all
+
+# 3. For all sources: Sync into unified database
+team unified sync
+
+# 4. Verify data is now available
+team unified query --limit 5
+```
+
 ### Sync Issues
+
+**Problem**: `team unified sync` fails or shows errors.
+
 ```bash
 # Check source connections
 team unified status
 
-# Try syncing individual sources
-team unified sync --source coda
-team unified sync --source linear
+# Try syncing individual sources to isolate the problem
+team unified sync --source coda    # Should find markdown files in ./data/coda/
+team unified sync --source linear  # Requires LINEAR_API_KEY
+team unified sync --source github  # Requires GITHUB_TOKEN
 
 # Clear and rebuild database
 rm ./data/unified.db
 team unified sync
+```
+
+### Coda Data Missing
+
+**Problem**: Coda source shows "Connected" but no data syncs.
+
+```bash
+# You need to extract Coda data first!
+team coda extract-all
+
+# Verify markdown files were created
+ls ./data/coda/
+
+# Then sync to unified database
+team unified sync --source coda
+```
+
+### Linear/GitHub API Issues
+
+**Problem**: Linear or GitHub sync fails with authentication errors.
+
+```bash
+# Check your API keys are configured
+team config show
+
+# Test API connections
+team config check
+
+# For Linear: Test the API key works
+team linear list cycles
+
+# For GitHub: Verify token and repository access
 ```
 
 ### Query Problems
@@ -391,6 +533,7 @@ team unified query --limit 5
 # Verify specific sources have data
 team unified query --sources coda --limit 1
 team unified query --sources linear --limit 1
+team unified query --sources github --limit 1
 ```
 
 ### Configuration Issues
@@ -400,6 +543,9 @@ team config show
 
 # Verify API keys are set
 team config check
+
+# Reset configuration if needed
+team config setup
 ```
 
 ## Data Privacy & Security

@@ -76,31 +76,45 @@ team unified newsletter --group-by assignee --start 2025-06-07
 team unified newsletter --group-by project
 ```
 
+## Data Flow Overview
+
+```
+Coda API → team coda extract-all → ./data/coda/*.md → team unified sync → ./data/unified.db
+Linear API → team unified sync → ./data/unified.db  
+GitHub API → team unified sync → ./data/unified.db
+```
+
 ## Configuration Quick Setup
 
 ```bash
-# Check what's configured
-team unified status
+# Step 1: Configure API keys and settings
+team config setup  # Interactive setup (recommended)
 
-# Configure Coda (uses existing markdown files)
-team config set CODA_DATA_DIRECTORY ./data/coda
-
-# Configure Linear
+# OR configure individually:
 team config set LINEAR_API_KEY your_linear_token
-
-# Configure GitHub
 team config set GITHUB_TOKEN your_github_token
 team config set GITHUB_REPOSITORIES "owner/repo1,owner/repo2"
+team config set CODA_API_KEY your_coda_token
+team config set CODA_DATA_DIRECTORY ./data/coda
 
-# Sync everything
+# Step 2: Extract data from sources
+team coda extract-all  # REQUIRED: Extract Coda to markdown files
+# (Linear and GitHub extract automatically during sync)
+
+# Step 3: Sync into unified database
 team unified sync
+
+# Step 4: Verify data loaded
+team unified status
+team unified query --limit 5
 ```
 
 ## Troubleshooting
 
 | Problem | Solution |
 |---------|----------|
-| No data showing | Run `team unified sync` first |
+| No data showing | 1. Extract Coda: `team coda extract-all` 2. Sync all: `team unified sync` |
+| Coda data missing | Must run `team coda extract-all` first, then `team unified sync` |
 | Source not connected | Check `team unified status`, verify API keys with `team config check` |
 | Sync fails | Try individual sources: `team unified sync --source coda` |
 | Query returns nothing | Check available data: `team unified query --limit 5` |
