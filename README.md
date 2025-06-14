@@ -11,7 +11,7 @@ A comprehensive command-line interface that provides **unified data integration*
 - **Activity reports**: Generate newsletters and summaries spanning all your team's work
 - **Local storage**: Fast SQLite database with full indexing for offline access
 
-📋 **Comprehensive Documentation**: [**📖 Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) | [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md)
+📋 **Comprehensive Documentation**: [**📖 Unified Data Guide**](./docs/UNIFIED-DATA-GUIDE.md) | [**⚡ Quick Reference**](./docs/UNIFIED-QUICK-REFERENCE.md)
 
 🚀 **Linear Integration**
 - List current cycles and issues with advanced filtering
@@ -67,7 +67,7 @@ team unified query --search "authentication"
 team unified newsletter --start 2025-06-07 --end 2025-06-14
 ```
 
-**Need help?** See the [**📖 Complete Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) for detailed usage examples and the [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md) for command cheat sheets.
+**Need help?** See the [**📖 Complete Unified Data Guide**](./docs/UNIFIED-DATA-GUIDE.md) for detailed usage examples and the [**⚡ Quick Reference**](./docs/UNIFIED-QUICK-REFERENCE.md) for command cheat sheets.
 
 ## Installation
 
@@ -154,8 +154,8 @@ team unified newsletter --group-by assignee --start 2025-06-07
 ```
 
 For complete examples and advanced usage, see:
-- [**📖 Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) - Complete documentation
-- [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md) - Command cheat sheet
+- [**📖 Unified Data Guide**](./docs/UNIFIED-DATA-GUIDE.md) - Complete documentation
+- [**⚡ Quick Reference**](./docs/UNIFIED-QUICK-REFERENCE.md) - Command cheat sheet
 
 ### Linear Integration
 
