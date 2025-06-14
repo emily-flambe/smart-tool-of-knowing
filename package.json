@@ -1,6 +1,6 @@
 {
   "name": "smart-tool-of-knowing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "CLI to track your team's Linear workspace activity with AI-powered summarization",
   "main": "dist/index.js",
   "type": "module",

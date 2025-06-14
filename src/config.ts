@@ -8,12 +8,24 @@ interface Config {
   openaiApiKey?: string;
   anthropicApiKey?: string;
   codaApiKey?: string;
+  githubToken?: string;
   defaultAiProvider?: 'openai' | 'anthropic';
   defaultSummaryType?: 'brief' | 'detailed' | 'action-items';
   openaiModel?: string;
   anthropicModel?: string;
   defaultCodaDocId?: string;
   defaultCodaDocName?: string;
+  githubRepositories?: string[];
+  coda?: {
+    dataDirectory?: string;
+  };
+  linear?: {
+    apiToken?: string;
+  };
+  github?: {
+    token?: string;
+    repositories?: string[];
+  };
 }
 
 class ConfigManager {
@@ -29,12 +41,24 @@ class ConfigManager {
       openaiApiKey: this.getOpenAIApiKey(),
       anthropicApiKey: this.getAnthropicApiKey(),
       codaApiKey: this.getCodaApiKey(),
+      githubToken: this.getGitHubToken(),
       defaultAiProvider: this.getDefaultAiProvider(),
       defaultSummaryType: this.getDefaultSummaryType(),
       openaiModel: this.getOpenAIModel(),
       anthropicModel: this.getAnthropicModel(),
       defaultCodaDocId: this.getDefaultCodaDocId(),
       defaultCodaDocName: this.getDefaultCodaDocName(),
+      githubRepositories: this.getGitHubRepositories(),
+      coda: {
+        dataDirectory: this.getCodaDataDirectory()
+      },
+      linear: {
+        apiToken: this.getLinearApiKey()
+      },
+      github: {
+        token: this.getGitHubToken(),
+        repositories: this.getGitHubRepositories()
+      }
     };
   }
 
@@ -91,6 +115,34 @@ class ConfigManager {
 
   setDefaultCodaDocName(docName: string): void {
     this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_NAME: docName });
+  }
+
+  getGitHubToken(): string | undefined {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+  }
+
+  setGitHubToken(token: string): void {
+    this.envManager.updateEnvFile({ GITHUB_TOKEN: token });
+  }
+
+  getGitHubRepositories(): string[] {
+    const envValues = this.envManager.readEnvFile();
+    const repoString = envValues.GITHUB_REPOSITORIES || process.env.GITHUB_REPOSITORIES;
+    return repoString ? repoString.split(',').map((r: string) => r.trim()) : [];
+  }
+
+  setGitHubRepositories(repositories: string[]): void {
+    this.envManager.updateEnvFile({ GITHUB_REPOSITORIES: repositories.join(',') });
+  }
+
+  getCodaDataDirectory(): string {
+    const envValues = this.envManager.readEnvFile();
+    return envValues.CODA_DATA_DIRECTORY || process.env.CODA_DATA_DIRECTORY || './data/coda';
+  }
+
+  setCodaDataDirectory(directory: string): void {
+    this.envManager.updateEnvFile({ CODA_DATA_DIRECTORY: directory });
   }
 
   getDefaultAiProvider(): 'openai' | 'anthropic' {
@@ -168,6 +220,14 @@ class ConfigManager {
       openaiApiKey: this.envManager.maskValue(config.openaiApiKey),
       anthropicApiKey: this.envManager.maskValue(config.anthropicApiKey),
       codaApiKey: this.envManager.maskValue(config.codaApiKey),
+      githubToken: this.envManager.maskValue(config.githubToken),
+      linear: {
+        apiToken: this.envManager.maskValue(config.linear?.apiToken)
+      },
+      github: {
+        token: this.envManager.maskValue(config.github?.token),
+        repositories: config.github?.repositories
+      }
     };
   }
 
@@ -181,4 +241,5 @@ class ConfigManager {
 }
 
 export const configManager = new ConfigManager();
+export const loadConfig = () => configManager.getConfig();
 export { ConfigManager, Config };

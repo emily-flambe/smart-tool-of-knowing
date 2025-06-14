@@ -36,6 +36,7 @@ export interface LinearCycle {
   team: {
     id: string;
     name: string;
+    key: string;
   };
 }
 

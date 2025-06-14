@@ -5,9 +5,98 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2025-06-13
+## [Unreleased]
+
+### 📋 Planned Features
+- Enhanced planning and capacity analysis features
+- AI-powered sprint planning recommendations
+- Full-text search optimization with FTS5
+- Webhook integrations for real-time data updates
+
+## [1.1.0] - 2025-06-14
 
 ### 🚀 Major Features
+
+#### Unified Data Layer Architecture
+- **Cross-Source Data Integration**: Unified schema for Coda, Linear, and GitHub data sources
+- **Universal Query Interface**: Search and analyze data across all connected sources
+- **Intelligent Data Extraction**: Modular extractors with incremental sync capabilities
+- **SQLite Storage Engine**: High-performance local storage with full indexing
+
+### ✨ Added
+
+#### New Unified Commands
+- `team unified sync` - Synchronize data from all configured sources (Coda, Linear, GitHub)
+- `team unified query` - Universal search across all data sources with advanced filtering
+- `team unified newsletter` - Generate activity reports and summaries across timeframes
+- `team unified status` - Monitor data source connections and storage statistics
+
+#### Multi-Source Data Extraction
+- **Coda Integration**: Enhanced extractor using existing markdown files with unified schema
+- **Linear Integration**: Complete extraction of teams, projects, cycles, and issues
+- **GitHub Integration**: Repository, commit, pull request, and issue extraction
+- **Incremental Sync**: Smart updates to avoid re-processing unchanged content
+
+#### Advanced Query Capabilities
+- **Text Search**: Full-text search across titles, content, and metadata
+- **Source Filtering**: Query specific data sources or combine multiple sources
+- **Content Type Filtering**: Filter by specific content types (issues, documents, commits, etc.)
+- **Time Range Filtering**: Query data within specific date ranges
+- **Pagination Support**: Efficient handling of large result sets
+
+#### Newsletter Generation
+- **Flexible Time Ranges**: Generate reports for any date range with smart defaults
+- **Multiple Grouping Options**: Group by source, content type, assignee, project, or cycle
+- **Rich Formatting**: Markdown and plain text output with metrics and summaries
+- **Activity Metrics**: Comprehensive statistics on completed work and progress
+
+#### Enhanced Configuration
+- **GitHub Integration Config**: Support for GitHub tokens and repository configuration
+- **Coda Data Directory**: Configurable location for Coda markdown files
+- **Multi-Source Setup**: Unified configuration for all data sources
+
+### 🔧 Technical Improvements
+
+#### Robust Data Architecture
+- **Unified Type System**: Common interfaces for all data sources with source-specific extensions
+- **Relationship Mapping**: Track connections between issues, documents, and projects
+- **Metadata Preservation**: Complete retention of source-specific metadata and relationships
+- **Search Optimization**: Indexed storage for fast cross-source queries
+
+#### Performance & Reliability
+- **Transaction Support**: Atomic operations for data consistency
+- **Connection Validation**: Health checks for all configured data sources
+- **Error Recovery**: Robust error handling with detailed feedback
+- **Memory Efficiency**: Optimized processing for large datasets
+
+#### Developer Experience
+- **Modular Architecture**: Pluggable extractor system for easy extension
+- **Comprehensive Logging**: Detailed operation tracking and debugging support
+- **Type Safety**: Full TypeScript implementation with strict type checking
+- **Clean CLI Interface**: Intuitive command structure with helpful feedback
+
+### 📊 New Use Cases Enabled
+
+#### Cross-Source Analysis
+- **Unified Knowledge Search**: Find information across all your team's data sources
+- **Activity Correlation**: Connect Linear issues with GitHub commits and Coda documentation
+- **Comprehensive Reporting**: Generate reports that span multiple platforms
+
+#### Team Intelligence
+- **Newsletter Automation**: Regular team updates combining work from all sources
+- **Progress Tracking**: Monitor activity across Linear, GitHub, and documentation
+- **Knowledge Discovery**: Find related information regardless of where it's stored
+
+#### Foundation for Advanced Features
+- **Planning Support**: Data foundation ready for AI-powered capacity planning
+- **Roadmap Alignment**: Track work against documentation and strategic goals
+- **Historical Analysis**: Analyze patterns and velocity across all team activities
+
+### 📚 Documentation Updates
+- **Architecture Guide**: Comprehensive documentation of the unified data layer
+- **Integration Examples**: Step-by-step setup for each data source
+- **Query Examples**: Advanced query patterns and use cases
+- **Newsletter Templates**: Sample newsletter configurations and formats
 
 #### Comprehensive Coda Integration
 - **Complete Coda API Integration**: Full integration with Coda's REST API for document and page management

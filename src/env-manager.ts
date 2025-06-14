@@ -6,12 +6,15 @@ interface EnvValues {
   OPENAI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
   CODA_API_KEY?: string;
+  GITHUB_TOKEN?: string;
   DEFAULT_AI_PROVIDER?: string;
   DEFAULT_CODA_DOC_ID?: string;
   DEFAULT_CODA_DOC_NAME?: string;
   DEFAULT_SUMMARY_TYPE?: string;
   OPENAI_MODEL?: string;
   ANTHROPIC_MODEL?: string;
+  GITHUB_REPOSITORIES?: string;
+  CODA_DATA_DIRECTORY?: string;
 }
 
 export class EnvManager {
@@ -56,8 +59,32 @@ export class EnvManager {
               case 'CODA_API_KEY':
                 values.CODA_API_KEY = cleanValue;
                 break;
+              case 'GITHUB_TOKEN':
+                values.GITHUB_TOKEN = cleanValue;
+                break;
               case 'DEFAULT_AI_PROVIDER':
                 values.DEFAULT_AI_PROVIDER = cleanValue;
+                break;
+              case 'DEFAULT_CODA_DOC_ID':
+                values.DEFAULT_CODA_DOC_ID = cleanValue;
+                break;
+              case 'DEFAULT_CODA_DOC_NAME':
+                values.DEFAULT_CODA_DOC_NAME = cleanValue;
+                break;
+              case 'DEFAULT_SUMMARY_TYPE':
+                values.DEFAULT_SUMMARY_TYPE = cleanValue;
+                break;
+              case 'OPENAI_MODEL':
+                values.OPENAI_MODEL = cleanValue;
+                break;
+              case 'ANTHROPIC_MODEL':
+                values.ANTHROPIC_MODEL = cleanValue;
+                break;
+              case 'GITHUB_REPOSITORIES':
+                values.GITHUB_REPOSITORIES = cleanValue;
+                break;
+              case 'CODA_DATA_DIRECTORY':
+                values.CODA_DATA_DIRECTORY = cleanValue;
                 break;
             }
           }
@@ -130,6 +157,10 @@ export class EnvManager {
       content += `CODA_API_KEY=${values.CODA_API_KEY}\n`;
     }
     
+    if (values.GITHUB_TOKEN) {
+      content += `GITHUB_TOKEN=${values.GITHUB_TOKEN}\n`;
+    }
+    
     if (values.DEFAULT_AI_PROVIDER) {
       content += `DEFAULT_AI_PROVIDER=${values.DEFAULT_AI_PROVIDER}\n`;
     }
@@ -152,6 +183,14 @@ export class EnvManager {
     
     if (values.ANTHROPIC_MODEL) {
       content += `ANTHROPIC_MODEL=${values.ANTHROPIC_MODEL}\n`;
+    }
+    
+    if (values.GITHUB_REPOSITORIES) {
+      content += `GITHUB_REPOSITORIES=${values.GITHUB_REPOSITORIES}\n`;
+    }
+    
+    if (values.CODA_DATA_DIRECTORY) {
+      content += `CODA_DATA_DIRECTORY=${values.CODA_DATA_DIRECTORY}\n`;
     }
 
     try {
