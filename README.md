@@ -1,24 +1,38 @@
 # Team Knowledge CLI
 
-A comprehensive command-line interface that integrates Linear, Coda, and AI providers (OpenAI and Anthropic) to provide intelligent team insights, documentation access, and project management.
+A comprehensive command-line interface that provides **unified data integration** across Linear, Coda, and GitHub with AI-powered insights for comprehensive team intelligence.
 
-## Features
+## ✨ Key Features
+
+🔄 **Unified Data Layer** *(NEW in v1.1.0)*
+- **Cross-source integration**: Search and analyze data across Linear, Coda, and GitHub in one interface
+- **Universal sync**: Intelligent data extraction with incremental updates
+- **Powerful queries**: Full-text search with advanced filtering across all platforms
+- **Activity reports**: Generate newsletters and summaries spanning all your team's work
+- **Local storage**: Fast SQLite database with full indexing for offline access
+
+📋 **Comprehensive Documentation**: [**📖 Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) | [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md)
 
 🚀 **Linear Integration**
-- List current cycles and issues
-- Filter issues by team, project, cycle, assignee, and status
-- View detailed issue information
+- List current cycles and issues with advanced filtering
+- View detailed issue information and relationships
 - Support for both Personal API keys and OAuth2 tokens
-- Planning analysis with workload distribution
+- Planning analysis with workload distribution and capacity insights
+- Complete team, project, and cycle management
 
 📚 **Coda Integration**
-- List and search Coda documents and pages
-- Extract page content to local markdown files
-- View document details, pages, and subpages with hierarchical display
+- List and search Coda documents and pages with hierarchical display
+- Extract page content to local markdown files with metadata preservation
 - AI-powered Q&A with RAG (Retrieval-Augmented Generation) service
 - Local database caching with SQLite for fast searches
-- Bulk content extraction with filtering options
+- Bulk content extraction with advanced filtering options
 - Seamless document discovery and content management
+
+🐙 **GitHub Integration** *(NEW)*
+- Repository, commit, and pull request tracking
+- Issue correlation with Linear and documentation
+- Author and activity analysis across repositories
+- Branch and merge tracking for development insights
 
 🤖 **AI-Powered Analysis**
 - Summarize individual issues, cycles, projects, or teams
@@ -26,14 +40,34 @@ A comprehensive command-line interface that integrates Linear, Coda, and AI prov
 - Support for OpenAI (GPT-4) and Anthropic (Claude) with configurable models
 - Multiple summary types: brief, detailed, action-items
 - Group summaries by project, assignee, or priority
-- Automatic metrics calculation
-- RAG-powered document search and Q&A
+- Automatic metrics calculation and trend analysis
 
 📊 **Rich Output**
 - Colorized and formatted output
 - Progress indicators with spinners
 - Interactive prompts for easy selection
 - Comprehensive error handling
+
+## 🚀 Quick Start with Unified Data Layer
+
+```bash
+# 1. Set up your integrations
+team config setup  # Interactive setup wizard
+
+# 2. Check what's connected
+team unified status
+
+# 3. Sync data from all sources
+team unified sync
+
+# 4. Search across everything
+team unified query --search "authentication"
+
+# 5. Generate a weekly activity report
+team unified newsletter --start 2025-06-07 --end 2025-06-14
+```
+
+**Need help?** See the [**📖 Complete Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) for detailed usage examples and the [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md) for command cheat sheets.
 
 ## Installation
 
@@ -56,7 +90,11 @@ npm run build
    - Go to [Coda Account Settings](https://coda.io/account)
    - Generate a new API token
 
-4. **Configure the CLI**
+4. **Get your GitHub token (optional, for unified data layer)**
+   - Go to [GitHub Settings > Developer settings > Personal access tokens](https://github.com/settings/tokens)
+   - Create a token with `repo` scope for private repos, or just `public_repo` for public repos
+
+5. **Configure the CLI**
    
    **Option A: Interactive Setup (Recommended)**
    ```bash
@@ -97,6 +135,27 @@ team config check --verbose
 # View current configuration
 team config show
 ```
+
+### Unified Data Layer *(Recommended Starting Point)*
+
+```bash
+# Check connections and sync data
+team unified status
+team unified sync
+
+# Search across all your data
+team unified query --search "authentication"
+team unified query --search "deployment" --sources coda,linear
+team unified query --types linear-issue --since 2025-06-01
+
+# Generate team reports
+team unified newsletter
+team unified newsletter --group-by assignee --start 2025-06-07
+```
+
+For complete examples and advanced usage, see:
+- [**📖 Unified Data Guide**](./UNIFIED-DATA-GUIDE.md) - Complete documentation
+- [**⚡ Quick Reference**](./UNIFIED-QUICK-REFERENCE.md) - Command cheat sheet
 
 ### Linear Integration
 
