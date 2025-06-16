@@ -14,6 +14,9 @@ A comprehensive command-line interface that provides **unified data integration*
 📋 **Comprehensive Documentation**: [**📖 Unified Data Guide**](./docs/UNIFIED-DATA-GUIDE.md) | [**⚡ Quick Reference**](./docs/UNIFIED-QUICK-REFERENCE.md)
 
 🚀 **Linear Integration**
+- **Interactive Planning UI**: Complete drag-and-drop cycle planning interface
+- **Real-time Assignment Management**: Visual ticket assignment with live updates
+- **Advanced Analytics**: Project/engineer breakdowns and workload visualization
 - List current cycles and issues with advanced filtering
 - View detailed issue information and relationships
 - Support for both Personal API keys and OAuth2 tokens
@@ -68,6 +71,45 @@ team unified newsletter --start 2025-06-07 --end 2025-06-14
 ```
 
 **Need help?** See the [**📖 Complete Unified Data Guide**](./docs/UNIFIED-DATA-GUIDE.md) for detailed usage examples and the [**⚡ Quick Reference**](./docs/UNIFIED-QUICK-REFERENCE.md) for command cheat sheets.
+
+## 🎯 Linear Planning UI
+
+**Interactive cycle planning interface for seamless team coordination**
+
+The Linear Planning UI provides a complete web-based interface for managing cycle planning, ticket assignments, and workload visualization.
+
+### 🚀 Quick Start - Planning UI
+
+```bash
+# Start the development environment
+./start-dev.sh
+
+# Or start manually
+npm run api-server &    # Start API server on port 3001  
+npm run web             # Start web interface on port 3000
+```
+
+Navigate to **http://localhost:3000** for the planning interface.
+
+### ✨ Key Features
+
+- **🎯 Drag-and-Drop Planning**: Intuitive ticket assignment between engineers and statuses
+- **📊 Real-time Analytics**: Project and engineer breakdowns with progress visualization  
+- **🔄 Live Updates**: Instant estimate editing and assignment tracking
+- **📈 Summary Tables**: Engineers × Projects matrix with story point distribution
+- **🎛️ Advanced Filtering**: Filter by projects, statuses, assignees, and priorities
+- **💾 Change Tracking**: Local changes with detailed commit history
+- **📱 Responsive Design**: Works seamlessly across desktop and mobile devices
+
+### 📋 Planning Workflow
+
+1. **Select Cycle**: Choose current or recent cycles from the dropdown
+2. **Drag & Drop**: Move tickets between engineers and status columns  
+3. **Edit Estimates**: Click story point values to edit inline
+4. **Track Changes**: View all modifications in the changes panel
+5. **Commit to Linear**: Apply changes back to Linear with detailed descriptions
+
+See the complete [**📖 Planning UI Guide**](./docs/PLANNING-UI.md) for detailed usage instructions.
 
 ## Installation
 
@@ -159,6 +201,15 @@ For complete examples and advanced usage, see:
 
 ### Linear Integration
 
+#### Planning UI (Web Interface)
+```bash
+# Start the complete planning interface
+./start-dev.sh
+
+# Access at http://localhost:3000
+```
+
+#### CLI Commands
 ```bash
 # List current cycles
 team linear list cycles
