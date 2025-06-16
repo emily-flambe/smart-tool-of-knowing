@@ -3,6 +3,7 @@ export interface LinearIssue {
   identifier: string;
   title: string;
   description?: string;
+  url: string;
   state: {
     name: string;
     type: string;
@@ -23,6 +24,7 @@ export interface LinearIssue {
   project?: {
     id: string;
     name: string;
+    color: string;
   };
 }
 
@@ -47,6 +49,7 @@ export interface LinearProject {
   state: string;
   startDate?: string;
   targetDate?: string;
+  color?: string;
 }
 
 export interface LinearTeam {

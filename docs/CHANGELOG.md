@@ -13,6 +13,141 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Full-text search optimization with FTS5
 - Webhook integrations for real-time data updates
 
+### 🎯 Linear Cycle Planning Web UI
+
+A comprehensive drag-and-drop web interface for visual Linear cycle planning, enabling teams to efficiently organize and balance upcoming sprint work.
+
+#### Core Features
+
+**Cycle Planning Interface**
+- **Cycle Selection**: Dropdown to select active or upcoming Linear cycles
+- **Engineer Columns**: Vertical columns representing team members with drag-and-drop capability
+- **Ticket Cards**: Rich ticket representations showing:
+  - Issue title and identifier (e.g., ENG-123)
+  - Project association with color coding
+  - Story points with visual indicators
+  - Priority level (Urgent, High, Medium, Low) with color coding
+  - Status indicators
+- **Story Point Summaries**: Real-time totals under each engineer column
+- **Project Breakdown**: Bottom panel showing story points distribution by project across the entire cycle
+
+**Prioritized Backlog Panel**
+- **Consolidated View**: Side panel showing all "To Do" tickets not assigned to any cycle
+- **Advanced Filtering**: 
+  - Project-based filtering with multi-select
+  - Text search across title, description, and labels
+  - Priority-based sorting (Urgent → Low)
+  - Status filtering (To Do, In Progress, etc.)
+- **Drag Integration**: Seamless drag-and-drop from backlog to cycle planning area
+- **Batch Operations**: Select multiple tickets for bulk assignment
+
+**Data Management**
+- **Refresh Button**: Fetch latest ticket metadata from Linear API
+- **Real-time Sync**: Automatic detection of ticket changes with optional refresh prompts
+- **Optimistic Updates**: Immediate UI updates with server sync in background
+- **Conflict Resolution**: Handle cases where tickets are modified in Linear during planning
+
+#### Technical Architecture
+
+**Frontend Technology Stack**
+- **React 18** with TypeScript for type-safe component development
+- **React DnD** for sophisticated drag-and-drop interactions
+- **TanStack Query** for server state management and caching
+- **Tailwind CSS** for responsive, utility-first styling
+- **Framer Motion** for smooth animations and transitions
+- **React Hook Form** for form management (filters, search)
+
+**Backend Integration**
+- **Express.js API** endpoints for Linear integration
+- **GraphQL Client** for Linear API communication
+- **WebSocket Connection** for real-time updates (future enhancement)
+- **Redis Caching** for performance optimization
+- **Rate Limiting** to respect Linear API constraints
+
+**Data Layer**
+- **Linear API Integration**: Fetch cycles, issues, users, projects, and teams
+- **Local State Management**: Optimistic updates with conflict resolution
+- **Caching Strategy**: Intelligent caching with TTL and invalidation
+- **Offline Support**: Basic offline mode with sync when reconnected
+
+#### User Experience Design
+
+**Drag and Drop Interactions**
+- **Visual Feedback**: Clear drop zones with hover states
+- **Constraint Validation**: Prevent invalid drops (e.g., completed tickets)
+- **Undo/Redo**: Support for undoing planning changes
+- **Keyboard Accessibility**: Full keyboard navigation support
+- **Touch Support**: Mobile-friendly touch interactions
+
+**Information Architecture**
+- **Responsive Layout**: Works on desktop, tablet, and mobile
+- **Information Density**: Configurable card detail levels
+- **Color Coding**: Consistent visual language for projects, priorities, and status
+- **Progressive Disclosure**: Expandable cards for additional detail
+- **Bulk Operations**: Multi-select for efficient batch operations
+
+**Performance Optimizations**
+- **Virtual Scrolling**: Handle large backlogs efficiently  
+- **Lazy Loading**: Load ticket details on demand
+- **Debounced Search**: Optimize search performance
+- **Memoized Components**: Prevent unnecessary re-renders
+- **Progressive Loading**: Show skeleton states during data fetching
+
+#### Advanced Features
+
+**Capacity Planning Intelligence**
+- **Velocity Tracking**: Historical velocity data for capacity estimation
+- **Workload Balance**: Visual indicators for over/under-allocation
+- **Skill Matching**: Highlight tickets matching engineer expertise
+- **Time Estimation**: Integration with Linear's time tracking
+- **Dependency Mapping**: Visual representation of ticket dependencies
+
+**Collaboration Features**
+- **Real-time Collaboration**: Multiple users planning simultaneously
+- **Planning Comments**: Add notes and discussions to planning decisions
+- **Planning History**: Track changes and planning iterations
+- **Team Notifications**: Notify team members of planning changes
+- **Planning Templates**: Save and reuse common planning patterns
+
+**Analytics and Reporting**
+- **Planning Metrics**: Track planning accuracy and team velocity
+- **Capacity Utilization**: Monitor team capacity across cycles
+- **Bottleneck Identification**: Identify frequently overloaded team members
+- **Planning Time Tracking**: Measure time spent in planning activities
+- **Export Capabilities**: Export planning data for external analysis
+
+#### Implementation Phases
+
+**Phase 1: Core Planning Interface (Week 1-2)**
+- Basic drag-and-drop between backlog and engineer columns
+- Cycle selection and ticket display
+- Story point summaries and project breakdown
+- Basic filtering and search
+
+**Phase 2: Enhanced UX (Week 3-4)**
+- Advanced filtering options
+- Responsive design and mobile support
+- Keyboard accessibility
+- Undo/redo functionality
+
+**Phase 3: Data Integration (Week 5-6)**
+- Linear API integration for real-time data
+- Refresh functionality
+- Conflict resolution
+- Optimistic updates
+
+**Phase 4: Advanced Features (Week 7-8)**
+- Capacity planning intelligence
+- Real-time collaboration
+- Analytics dashboard
+- Planning templates
+
+#### Future Integration
+- **Commit Changes**: Full integration to push planning decisions back to Linear
+- **Automated Planning**: AI-powered planning suggestions based on historical data
+- **Integration with Other Tools**: Slack notifications, calendar integration
+- **Advanced Analytics**: Predictive capacity planning and velocity forecasting
+
 ## [1.1.0] - 2025-06-14
 
 ### 🚀 Major Features
