@@ -5,6 +5,7 @@ export interface LinearIssue {
   description?: string
   priority: number
   estimate?: number
+  url: string
   state: {
     id: string
     name: string
@@ -57,8 +58,28 @@ export interface ProjectSummary {
 }
 
 export const PRIORITY_LABELS = {
-  1: { label: 'Urgent', color: 'bg-red-500' },
-  2: { label: 'High', color: 'bg-orange-500' },
-  3: { label: 'Medium', color: 'bg-yellow-500' },
-  4: { label: 'Low', color: 'bg-green-500' }
+  1: { 
+    label: 'Urgent', 
+    color: 'bg-red-500', 
+    textColor: 'text-red-600',
+    icon: '🔥'
+  },
+  2: { 
+    label: 'High', 
+    color: 'bg-orange-500', 
+    textColor: 'text-orange-600',
+    icon: '⚡'
+  },
+  3: { 
+    label: 'Medium', 
+    color: 'bg-yellow-500', 
+    textColor: 'text-yellow-600',
+    icon: '📈'
+  },
+  4: { 
+    label: 'Low', 
+    color: 'bg-green-500', 
+    textColor: 'text-green-600',
+    icon: '📋'
+  }
 } as const

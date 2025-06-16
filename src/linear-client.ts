@@ -9,6 +9,10 @@ export class LinearClient {
     this.apiKey = apiKey;
   }
 
+  async makeRequest(query: string, variables: Record<string, any> = {}): Promise<any> {
+    return this.query(query, variables)
+  }
+
   private async query(query: string, variables: Record<string, any> = {}): Promise<any> {
     const authHeader = this.apiKey.startsWith('lin_oauth_') 
       ? `Bearer ${this.apiKey}`
@@ -156,6 +160,7 @@ export class LinearClient {
               identifier
               title
               description
+              url
               state {
                 name
                 type
@@ -178,6 +183,7 @@ export class LinearClient {
               project {
                 id
                 name
+                color
               }
             }
           }
@@ -199,6 +205,7 @@ export class LinearClient {
               identifier
               title
               description
+              url
               state {
                 name
                 type
@@ -221,6 +228,7 @@ export class LinearClient {
               project {
                 id
                 name
+                color
               }
             }
           }
@@ -243,6 +251,7 @@ export class LinearClient {
             state
             startDate
             targetDate
+            color
           }
         }
       }
@@ -279,6 +288,7 @@ export class LinearClient {
               identifier
               title
               description
+              url
               state {
                 name
                 type
@@ -301,6 +311,7 @@ export class LinearClient {
               project {
                 id
                 name
+                color
               }
             }
           }
@@ -325,6 +336,7 @@ export class LinearClient {
             type
           }
           assignee {
+            id
             name
             email
           }
@@ -343,6 +355,10 @@ export class LinearClient {
             id
             name
           }
+          cycle {
+            id
+            name
+          }
         }
       }
     `;
@@ -352,6 +368,200 @@ export class LinearClient {
       return data.issue;
     } catch (error) {
       return null;
+    }
+  }
+
+  async getBacklogIssues(): Promise<LinearIssue[]> {
+    const query = `
+      query {
+        issues(
+          filter: { 
+            assignee: { null: true }
+          }
+          first: 100
+        ) {
+          nodes {
+            id
+            identifier
+            title
+            description
+            state {
+              name
+              type
+            }
+            assignee {
+              id
+              name
+              email
+            }
+            priority
+            estimate
+            createdAt
+            updatedAt
+            labels {
+              nodes {
+                id
+                name
+                color
+              }
+            }
+            project {
+              id
+              name
+            }
+            cycle {
+              id
+              name
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await this.query(query);
+    return data.issues.nodes;
+  }
+
+  async getIssuesForCycle(cycleId: string): Promise<LinearIssue[]> {
+    const query = `
+      query($cycleId: String!) {
+        cycle(id: $cycleId) {
+          issues {
+            nodes {
+              id
+              identifier
+              title
+              description
+              url
+              state {
+                name
+                type
+              }
+              assignee {
+                id
+                name
+                email
+              }
+              priority
+              estimate
+              createdAt
+              updatedAt
+              labels {
+                nodes {
+                  id
+                  name
+                  color
+                }
+              }
+              project {
+                id
+                name
+                color
+              }
+              cycle {
+                id
+                name
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await this.query(query, { cycleId });
+    return data.cycle?.issues?.nodes || [];
+  }
+
+  async getTeamMembers(): Promise<Array<{ id: string; name: string; email: string; avatarUrl?: string }>> {
+    const query = `
+      query {
+        users(first: 50) {
+          nodes {
+            id
+            name
+            email
+            avatarUrl
+            active
+          }
+        }
+      }
+    `;
+
+    const data = await this.query(query);
+    return data.users.nodes.filter((user: any) => user.active).map((user: any) => ({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      avatarUrl: user.avatarUrl
+    }));
+  }
+
+  async updateIssueEstimate(issueId: string, estimate: number): Promise<any> {
+    const mutation = `
+      mutation($issueId: String!, $estimate: Int) {
+        issueUpdate(
+          id: $issueId
+          input: { estimate: $estimate }
+        ) {
+          success
+          issue {
+            id
+            identifier
+            title
+            estimate
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await this.query(mutation, { issueId, estimate: Math.round(estimate) });
+      
+      if (!data.issueUpdate.success) {
+        throw new Error('Linear API returned success: false');
+      }
+      
+      return data.issueUpdate;
+    } catch (error: any) {
+      throw new Error(`Failed to update issue estimate: ${error.message}`);
+    }
+  }
+
+  async updateIssueAssignee(issueId: string, assigneeId: string | null): Promise<any> {
+    const mutation = `
+      mutation($issueId: String!, $assigneeId: String) {
+        issueUpdate(
+          id: $issueId
+          input: { assigneeId: $assigneeId }
+        ) {
+          success
+          issue {
+            id
+            identifier
+            title
+            assignee {
+              id
+              name
+              email
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const data = await this.query(mutation, { 
+        issueId, 
+        assigneeId: assigneeId || null 
+      });
+      
+      if (!data.issueUpdate.success) {
+        throw new Error('Linear API returned success: false');
+      }
+      
+      return data.issueUpdate;
+    } catch (error: any) {
+      throw new Error(`Failed to update issue assignee: ${error.message}`);
     }
   }
 }
