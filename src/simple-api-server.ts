@@ -171,6 +171,117 @@ class SimpleLinearClient {
     return data.cycle?.issues?.nodes || []
   }
 
+  async getCompletedIssuesInCycle(cycleId: string): Promise<any[]> {
+    const query = `
+      query($cycleId: String!) {
+        cycle(id: $cycleId) {
+          id
+          name
+          startsAt
+          endsAt
+          issues {
+            nodes {
+              id
+              identifier
+              title
+              description
+              url
+              state {
+                id
+                name
+                type
+              }
+              assignee {
+                name
+                email
+                id
+              }
+              priority
+              estimate
+              createdAt
+              updatedAt
+              completedAt
+              labels {
+                nodes {
+                  id
+                  name
+                  color
+                }
+              }
+              project {
+                id
+                name
+                color
+              }
+              history {
+                nodes {
+                  id
+                  createdAt
+                  fromState {
+                    name
+                    type
+                  }
+                  toState {
+                    name
+                    type
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+
+    const data = await this.query(query, { cycleId })
+    const cycle = data.cycle
+    const allIssues = cycle?.issues?.nodes || []
+
+    // Filter to only completed issues (Done, Completed, etc.)
+    const completedIssues = allIssues.filter((issue: any) => {
+      const stateType = issue.state?.type?.toLowerCase()
+      const stateName = issue.state?.name?.toLowerCase()
+      return stateType === 'completed' || 
+             stateName?.includes('done') || 
+             stateName?.includes('completed') ||
+             stateName?.includes('closed')
+    })
+
+    // Add completion date from history if available
+    return completedIssues.map((issue: any) => {
+      let completedAt = issue.completedAt || issue.updatedAt
+
+      // Try to find completion date from history
+      if (issue.history?.nodes) {
+        const completionEvent = issue.history.nodes
+          .reverse() // Most recent first
+          .find((event: any) => {
+            const toStateType = event.toState?.type?.toLowerCase()
+            const toStateName = event.toState?.name?.toLowerCase()
+            return toStateType === 'completed' || 
+                   toStateName?.includes('done') || 
+                   toStateName?.includes('completed') ||
+                   toStateName?.includes('closed')
+          })
+        
+        if (completionEvent) {
+          completedAt = completionEvent.createdAt
+        }
+      }
+
+      return {
+        ...issue,
+        completedAt,
+        cycle: {
+          id: cycle.id,
+          name: cycle.name,
+          startsAt: cycle.startsAt,
+          endsAt: cycle.endsAt
+        }
+      }
+    })
+  }
+
   async getTeams(): Promise<any[]> {
     const query = `
       query {
@@ -727,6 +838,134 @@ app.get('/api/completed-cycles', async (req: any, res: any) => {
     console.error('❌ Error fetching completed cycles:', error)
     res.status(500).json({
       error: 'Failed to fetch completed cycles',
+      message: error.message
+    })
+  }
+})
+
+app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    const { cycleId } = req.params
+    console.log(`🔍 Fetching cycle review data for cycle ${cycleId}...`)
+    
+    const completedIssues = await linearClient.getCompletedIssuesInCycle(cycleId)
+    
+    if (completedIssues.length === 0) {
+      return res.json({
+        cycle: null,
+        stats: {
+          totalIssues: 0,
+          totalPoints: 0,
+          totalPRs: 0,
+          uniqueContributors: 0,
+          velocity: 0
+        },
+        issues: [],
+        pullRequests: []
+      })
+    }
+
+    // Get cycle info from the first issue (they all share the same cycle data)
+    const cycleInfo = completedIssues[0].cycle
+
+    // Calculate aggregate statistics
+    const totalIssues = completedIssues.length
+    const totalPoints = completedIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+    const uniqueContributors = new Set(
+      completedIssues
+        .filter(issue => issue.assignee?.id)
+        .map(issue => issue.assignee.id)
+    ).size
+
+    // Calculate velocity (points per week)
+    const cycleStart = new Date(cycleInfo.startsAt)
+    const cycleEnd = new Date(cycleInfo.endsAt)
+    const cycleDurationWeeks = Math.max(1, (cycleEnd.getTime() - cycleStart.getTime()) / (1000 * 60 * 60 * 24 * 7))
+    const velocity = Math.round((totalPoints / cycleDurationWeeks) * 10) / 10 // Round to 1 decimal
+
+    // Format issues for response
+    const formattedIssues = completedIssues.map(issue => ({
+      id: issue.id,
+      identifier: issue.identifier,
+      title: issue.title,
+      description: issue.description,
+      estimate: issue.estimate || 0,
+      assignee: issue.assignee ? {
+        id: issue.assignee.id,
+        name: issue.assignee.name,
+        email: issue.assignee.email
+      } : null,
+      project: issue.project ? {
+        id: issue.project.id,
+        name: issue.project.name,
+        color: issue.project.color
+      } : null,
+      labels: issue.labels?.nodes || [],
+      completedAt: issue.completedAt,
+      url: issue.url,
+      linkedPRs: [] // Will be populated by GitHub integration
+    }))
+
+    // Group data for easier frontend consumption
+    const issuesByProject = formattedIssues.reduce((acc: any, issue) => {
+      const projectKey = issue.project?.name || 'No Project'
+      if (!acc[projectKey]) {
+        acc[projectKey] = {
+          project: issue.project,
+          issues: [],
+          totalPoints: 0
+        }
+      }
+      acc[projectKey].issues.push(issue)
+      acc[projectKey].totalPoints += issue.estimate
+      return acc
+    }, {})
+
+    const issuesByEngineer = formattedIssues.reduce((acc: any, issue) => {
+      const engineerKey = issue.assignee?.name || 'Unassigned'
+      if (!acc[engineerKey]) {
+        acc[engineerKey] = {
+          assignee: issue.assignee,
+          issues: [],
+          totalPoints: 0
+        }
+      }
+      acc[engineerKey].issues.push(issue)
+      acc[engineerKey].totalPoints += issue.estimate
+      return acc
+    }, {})
+
+    res.json({
+      cycle: {
+        id: cycleInfo.id,
+        name: cycleInfo.name,
+        startedAt: cycleInfo.startsAt,
+        completedAt: cycleInfo.endsAt
+      },
+      stats: {
+        totalIssues,
+        totalPoints,
+        totalPRs: 0, // Will be populated by GitHub integration
+        uniqueContributors,
+        velocity
+      },
+      issues: formattedIssues,
+      issuesByProject,
+      issuesByEngineer,
+      pullRequests: [] // Will be populated by GitHub integration
+    })
+
+  } catch (error: any) {
+    console.error('❌ Error fetching cycle review data:', error)
+    res.status(500).json({
+      error: 'Failed to fetch cycle review data',
       message: error.message
     })
   }
