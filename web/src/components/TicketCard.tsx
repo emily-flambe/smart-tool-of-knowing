@@ -28,7 +28,12 @@ export const TicketCard: React.FC<TicketCardProps> = ({ issue, onUpdateEstimate 
   const handleEstimateClick = () => {
     if (onUpdateEstimate) {
       setIsEditingEstimate(true)
-      setEstimateInput(issue.estimate?.toString() || '')
+      if (issue.estimate === null || issue.estimate === undefined) {
+        console.debug(`Issue ${issue.identifier} estimate is null/undefined when starting edit`)
+        setEstimateInput('')
+      } else {
+        setEstimateInput(issue.estimate.toString())
+      }
     }
   }
 
@@ -47,7 +52,12 @@ export const TicketCard: React.FC<TicketCardProps> = ({ issue, onUpdateEstimate 
       handleEstimateSubmit()
     } else if (e.key === 'Escape') {
       setIsEditingEstimate(false)
-      setEstimateInput(issue.estimate?.toString() || '')
+      if (issue.estimate === null || issue.estimate === undefined) {
+        console.debug(`Issue ${issue.identifier} estimate is null/undefined when canceling edit`)
+        setEstimateInput('')
+      } else {
+        setEstimateInput(issue.estimate.toString())
+      }
     }
   }
 

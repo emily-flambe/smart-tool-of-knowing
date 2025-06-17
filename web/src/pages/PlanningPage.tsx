@@ -465,14 +465,18 @@ export function PlanningPage() {
       if (issue.project) {
         const existing = projectMap.get(issue.project.id)
         if (existing) {
-          existing.totalPoints += issue.estimate || 0
+          const estimate = issue.estimate
+          if (estimate === null || estimate === undefined) {
+            console.debug(`Issue ${issue.identifier} has no estimate for project ${issue.project.name}`)
+          }
+          existing.totalPoints += estimate ?? 0
           existing.issueCount += 1
         } else {
           projectMap.set(issue.project.id, {
             id: issue.project.id,
             name: issue.project.name,
             color: issue.project.color,
-            totalPoints: issue.estimate || 0,
+            totalPoints: issue.estimate ?? 0, // Use nullish coalescing to distinguish null/undefined from 0
             issueCount: 1
           })
         }
@@ -511,7 +515,14 @@ export function PlanningPage() {
                         cycleFilteredData.activeEngineers.find(ae => ae.id === engineerId)
         
         if (engineer) {
-          const totalPoints = issues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+          const totalPoints = issues.reduce((sum, issue) => {
+            const estimate = issue.estimate
+            if (estimate === null || estimate === undefined) {
+              console.debug(`Issue ${issue.identifier} has no estimate for engineer ${engineer.name}`)
+              return sum + 0
+            }
+            return sum + estimate
+          }, 0)
           engineerMap.set(engineerId, {
             id: engineerId,
             name: engineer.name,

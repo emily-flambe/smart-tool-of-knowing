@@ -129,7 +129,14 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
   statusId,
   groupByEngineer = false
 }) => {
-  const totalPoints = issues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+  const totalPoints = issues.reduce((sum, issue) => {
+    const estimate = issue.estimate
+    if (estimate === null || estimate === undefined) {
+      console.debug(`Issue ${issue.identifier} has no estimate in status section`)
+      return sum + 0
+    }
+    return sum + estimate
+  }, 0)
   const issueCount = issues.length
 
   const getEngineerForIssue = (issue: LinearIssue): TeamMember | undefined => {
@@ -263,7 +270,14 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 const engineer = engineerId === 'unassigned' 
                   ? null 
                   : teamMembers.find(m => m.id === engineerId) || null
-                const groupPoints = groupIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+                const groupPoints = groupIssues.reduce((sum, issue) => {
+                  const estimate = issue.estimate
+                  if (estimate === null || estimate === undefined) {
+                    console.debug(`Issue ${issue.identifier} has no estimate in engineer group`)
+                    return sum + 0
+                  }
+                  return sum + estimate
+                }, 0)
                 
                 return (
                   <EngineerDropColumn
@@ -295,7 +309,14 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 const project = projectId === 'no-project' 
                   ? null 
                   : issues.find(i => i.project?.id === projectId)?.project
-                const projectPoints = projectIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+                const projectPoints = projectIssues.reduce((sum, issue) => {
+                  const estimate = issue.estimate
+                  if (estimate === null || estimate === undefined) {
+                    console.debug(`Issue ${issue.identifier} has no estimate in project group`)
+                    return sum + 0
+                  }
+                  return sum + estimate
+                }, 0)
                 
                 return (
                   <div key={`project-${projectId}`} className="space-y-3">

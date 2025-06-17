@@ -971,11 +971,11 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       return res.json({
         cycle: null,
         stats: {
-          totalIssues: 0,
-          totalPoints: 0,
-          totalPRs: 0,
-          uniqueContributors: 0,
-          velocity: 0
+          totalIssues: 0, // No completed issues found
+          totalPoints: 0, // No story points completed
+          totalPRs: 0, // No PRs linked
+          uniqueContributors: 0, // No contributors found
+          velocity: 0 // No velocity data available
         },
         issues: [],
         pullRequests: []
@@ -987,8 +987,22 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
 
     // Calculate aggregate statistics
     const totalIssues = completedIssues.length
-    const totalPoints = completedIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
-    const totalPRs = completedIssues.reduce((sum, issue) => sum + (issue.linkedPRs?.length || 0), 0)
+    const totalPoints = completedIssues.reduce((sum, issue) => {
+      const estimate = issue.estimate
+      if (estimate === null || estimate === undefined) {
+        console.debug(`Issue ${issue.identifier} has no estimate - treating as 0 points`)
+        return sum + 0
+      }
+      return sum + estimate
+    }, 0)
+    const totalPRs = completedIssues.reduce((sum, issue) => {
+      const linkedPRs = issue.linkedPRs
+      if (!linkedPRs || linkedPRs.length === 0) {
+        console.debug(`Issue ${issue.identifier} has no linked PRs`)
+        return sum + 0
+      }
+      return sum + linkedPRs.length
+    }, 0)
     const uniqueContributors = new Set(
       completedIssues
         .filter(issue => issue.assignee?.id)

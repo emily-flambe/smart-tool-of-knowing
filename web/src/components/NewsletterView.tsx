@@ -38,6 +38,28 @@ interface NewsletterViewProps {
   issues: Issue[]
 }
 
+// Generate a vibrant color if project doesn't have one or has gray (same logic as OverviewCards)
+function generateProjectColor(projectName: string, originalColor?: string): string {
+  if (originalColor && originalColor !== '#bec2c8') {
+    return originalColor
+  }
+  
+  const colors = [
+    '#3B82F6', // blue
+    '#10B981', // emerald  
+    '#F59E0B', // amber
+    '#EF4444', // red
+    '#8B5CF6', // violet
+    '#06B6D4', // cyan
+    '#84CC16', // lime
+    '#F97316', // orange
+    '#EC4899', // pink
+    '#6366F1'  // indigo
+  ]
+  const hash = projectName.split('').reduce((a, b) => a + b.charCodeAt(0), 0)
+  return colors[hash % colors.length]
+}
+
 export function NewsletterView({ issues }: NewsletterViewProps) {
   // Group issues by project and sort by total points
   const projectGroups: ProjectGroup[] = React.useMemo(() => {
@@ -47,9 +69,10 @@ export function NewsletterView({ issues }: NewsletterViewProps) {
       const projectName = issue.project?.name || 'No Project'
       
       if (!projectMap.has(projectName)) {
+        const displayColor = generateProjectColor(projectName, issue.project?.color)
         projectMap.set(projectName, {
           name: projectName,
-          color: issue.project?.color,
+          color: displayColor,
           totalPoints: 0,
           issues: []
         })
