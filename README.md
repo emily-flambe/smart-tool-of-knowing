@@ -257,15 +257,15 @@ team coda list-pages-urls
 team coda list-subpages
 
 # Extract single page content
-team coda extract-page --url https://coda.io/d/_dDocId/_suPageId
+team coda extract-url --url https://coda.io/d/_dDocId/_suPageId
 
 # Extract all pages to markdown files
 team coda extract-all
 team coda extract-all --force --limit 50
 team coda extract-all --exclude-subpages --exclude-hidden
 
-# Extract and index content for AI search
-team coda extract
+# Extract all pages to markdown files
+team coda extract-all
 
 # Ask AI questions about your documentation
 team coda ask "What are our working hours?"
@@ -365,9 +365,8 @@ team config clear
 | `team coda list-pages` | List pages in default document | `--limit <n>`, `--doc-id <id>` |
 | `team coda list-pages-urls` | List pages with browser URLs | `--limit <n>`, `--doc-id <id>` |
 | `team coda list-subpages` | Interactive subpage browser | `--doc-id <id>` |
-| `team coda extract-page` | Extract single page to markdown | `--url <coda-url>`, `--force` |
+| `team coda extract-url` | Extract single page to markdown | `--url <coda-url>`, `--force` |
 | `team coda extract-all` | Extract all pages to markdown files | `--force`, `--limit <n>`, `--exclude-subpages`, `--exclude-hidden`, `--min-content-length <n>` |
-| `team coda extract` | Extract and index content for AI | `--include-table-data`, `--max-documents <n>`, `--force-refresh` |
 | `team coda ask` | Ask AI questions about documents | `<question>`, `--include-table-data`, `--focus-on-default-doc`, `--refresh-cache`, `--use-full-content` |
 
 ### Options Reference
@@ -459,7 +458,7 @@ The CLI provides multiple ways to store and access Coda content:
 team coda extract-all
 
 # Extract single page to both formats
-team coda extract-page --url https://coda.io/d/_dDocId/_suPageId
+team coda extract-url --url https://coda.io/d/_dDocId/_suPageId
 
 # Use AI to search and answer questions
 team coda ask "How do I configure the development environment?"
