@@ -168,7 +168,15 @@ class SimpleLinearClient {
     `
 
     const data = await this.query(query, { cycleId })
-    return data.cycle?.issues?.nodes || []
+    if (!data.cycle) {
+      console.warn(`No cycle data found for cycleId: ${cycleId}`)
+      return []
+    }
+    if (!data.cycle.issues?.nodes) {
+      console.warn(`No issues found in cycle ${cycleId}`)
+      return []
+    }
+    return data.cycle.issues.nodes
   }
 
   async getCompletedIssuesInCycle(cycleId: string): Promise<any[]> {
@@ -213,6 +221,18 @@ class SimpleLinearClient {
                 name
                 color
               }
+              attachments {
+                nodes {
+                  id
+                  title
+                  url
+                  createdAt
+                  creator {
+                    name
+                  }
+                  metadata
+                }
+              }
               history {
                 nodes {
                   id
@@ -235,7 +255,15 @@ class SimpleLinearClient {
 
     const data = await this.query(query, { cycleId })
     const cycle = data.cycle
-    const allIssues = cycle?.issues?.nodes || []
+    if (!cycle) {
+      console.warn(`No cycle data found for cycleId: ${cycleId}`)
+      return []
+    }
+    const allIssues = cycle.issues?.nodes
+    if (!allIssues) {
+      console.warn(`No issues found in cycle ${cycleId}`)
+      return []
+    }
 
     // Filter to only completed issues (Done, Completed, etc.)
     const completedIssues = allIssues.filter((issue: any) => {
@@ -269,9 +297,17 @@ class SimpleLinearClient {
         }
       }
 
+      // Process attachments to extract GitHub PRs
+      const attachments = issue.attachments?.nodes
+      if (!attachments) {
+        console.debug(`No attachments found for issue ${issue.identifier}`)
+      }
+      const linkedPRs = this.extractGitHubPRsFromAttachments(attachments || [])
+
       return {
         ...issue,
         completedAt,
+        linkedPRs,
         cycle: {
           id: cycle.id,
           name: cycle.name,
@@ -280,6 +316,69 @@ class SimpleLinearClient {
         }
       }
     })
+  }
+
+  async testSingleIssueAttachments(issueId: string): Promise<any> {
+    const query = `
+      query($issueId: String!) {
+        issue(id: $issueId) {
+          id
+          identifier
+          title
+          attachments {
+            nodes {
+              id
+              title
+              url
+              createdAt
+              creator {
+                name
+              }
+            }
+          }
+        }
+      }
+    `
+    
+    const data = await this.query(query, { issueId })
+    console.log(`Test attachments for issue ${data.issue?.identifier}:`, data.issue?.attachments?.nodes)
+    return data.issue
+  }
+
+  private extractGitHubPRsFromAttachments(attachments: any[]): any[] {
+    if (!attachments || attachments.length === 0) {
+      return []
+    }
+    return attachments
+      .filter(attachment => {
+        // Filter for GitHub pull request URLs
+        const url = attachment.url || ''
+        return url.includes('github.com') && url.includes('/pull/')
+      })
+      .map(attachment => {
+        const url = attachment.url || ''
+        
+        // Extract PR number from URL
+        const prNumberMatch = url.match(/\/pull\/(\d+)/)
+        const prNumber = prNumberMatch ? parseInt(prNumberMatch[1]) : null
+        
+        // Extract repo and org from URL
+        const repoMatch = url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull/)
+        const org = repoMatch ? repoMatch[1] : null
+        const repo = repoMatch ? repoMatch[2] : null
+
+        return {
+          id: attachment.id,
+          title: attachment.title || `PR #${prNumber}`,
+          url: attachment.url,
+          number: prNumber,
+          org,
+          repo,
+          createdAt: attachment.createdAt,
+          creator: attachment.creator?.name,
+          metadata: attachment.metadata
+        }
+      })
   }
 
   async getTeams(): Promise<any[]> {
@@ -757,6 +856,16 @@ app.get('/api/health', async (req: any, res: any) => {
 })
 
 // Test Linear connection specifically
+app.get('/api/test-attachments/:issueId', async (req: any, res: any) => {
+  try {
+    const { issueId } = req.params
+    const result = await linearClient.testSingleIssueAttachments(issueId)
+    res.json({ success: true, result })
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
 app.get('/api/test-linear', async (req: any, res: any) => {
   try {
     if (!linearClient) {
@@ -858,14 +967,15 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
     const completedIssues = await linearClient.getCompletedIssuesInCycle(cycleId)
     
     if (completedIssues.length === 0) {
+      console.log(`No completed issues found for cycle ${cycleId}`)
       return res.json({
         cycle: null,
         stats: {
-          totalIssues: 0,
-          totalPoints: 0,
-          totalPRs: 0,
-          uniqueContributors: 0,
-          velocity: 0
+          totalIssues: 0, // No completed issues found
+          totalPoints: 0, // No story points completed
+          totalPRs: 0, // No PRs linked
+          uniqueContributors: 0, // No contributors found
+          velocity: 0 // No velocity data available
         },
         issues: [],
         pullRequests: []
@@ -877,7 +987,22 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
 
     // Calculate aggregate statistics
     const totalIssues = completedIssues.length
-    const totalPoints = completedIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+    const totalPoints = completedIssues.reduce((sum, issue) => {
+      const estimate = issue.estimate
+      if (estimate === null || estimate === undefined) {
+        console.debug(`Issue ${issue.identifier} has no estimate - treating as 0 points`)
+        return sum + 0
+      }
+      return sum + estimate
+    }, 0)
+    const totalPRs = completedIssues.reduce((sum, issue) => {
+      const linkedPRs = issue.linkedPRs
+      if (!linkedPRs || linkedPRs.length === 0) {
+        console.debug(`Issue ${issue.identifier} has no linked PRs`)
+        return sum + 0
+      }
+      return sum + linkedPRs.length
+    }, 0)
     const uniqueContributors = new Set(
       completedIssues
         .filter(issue => issue.assignee?.id)
@@ -910,7 +1035,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       labels: issue.labels?.nodes || [],
       completedAt: issue.completedAt,
       url: issue.url,
-      linkedPRs: [] // Will be populated by GitHub integration
+      linkedPRs: issue.linkedPRs || []
     }))
 
     // Group data for easier frontend consumption
@@ -952,7 +1077,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       stats: {
         totalIssues,
         totalPoints,
-        totalPRs: 0, // Will be populated by GitHub integration
+        totalPRs,
         uniqueContributors,
         velocity
       },
@@ -1102,7 +1227,7 @@ app.post('/api/fetch-data', async (req: any, res: any) => {
     console.log(`📊 Found ${cycles.length} cycles, ${teams.length} teams, ${users.length} users, and ${unassignedIssues.length} unassigned issues`)
 
     // Get issues for all cycles
-    const allIssues = []
+    const allIssues: any[] = []
     for (const cycle of cycles) {
       console.log(`📝 Fetching issues for cycle: ${cycle.name}`)
       const cycleIssues = await linearClient.getIssuesInCycle(cycle.id)

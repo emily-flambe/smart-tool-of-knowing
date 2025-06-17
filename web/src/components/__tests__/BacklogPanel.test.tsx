@@ -13,6 +13,7 @@ const mockIssues: LinearIssue[] = [
     title: 'Implement user authentication flow',
     priority: 2,
     estimate: 5,
+    url: 'https://linear.app/team/issue/ENG-123',
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '1', name: 'Auth System', color: '#3b82f6' },
     labels: []
@@ -23,6 +24,7 @@ const mockIssues: LinearIssue[] = [
     title: 'Add password reset functionality',
     priority: 3,
     estimate: 3,
+    url: 'https://linear.app/team/issue/ENG-124',
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '1', name: 'Auth System', color: '#3b82f6' },
     labels: []
@@ -33,6 +35,7 @@ const mockIssues: LinearIssue[] = [
     title: 'Optimize database queries',
     priority: 1,
     estimate: 8,
+    url: 'https://linear.app/team/issue/ENG-125',
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '2', name: 'Performance', color: '#10b981' },
     labels: []
@@ -43,6 +46,7 @@ const mockIssues: LinearIssue[] = [
     title: 'Fix responsive design issues',
     priority: 2,
     estimate: 2,
+    url: 'https://linear.app/team/issue/UI-101',
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '3', name: 'UI/UX', color: '#f59e0b' },
     labels: []

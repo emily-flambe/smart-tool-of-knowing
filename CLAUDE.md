@@ -81,14 +81,36 @@
 - **Log file location:** `conversation-log.md` (root of project, excluded from git)
 
 ## API Server Management
-- **NEVER** attempt to kill or restart the API server yourself
+- **NEVER** attempt to run process management commands like `kill`, `pkill`, `killall`, or similar to kill/restart the API server yourself
 - **ALWAYS** ask the user to kill and restart the API server when needed
-- Do not use process management commands like `kill`, `pkill`, `killall`, or similar
+- You CAN provide the user with the commands they need to kill/restart processes when they ask for them
 
 ## File Protection
 - **NEVER** delete the changelog file
 - Preserve existing changelog entries when making updates
 
+## Testing and Quality Assurance
+- **ALWAYS** test new changes manually before committing to any branch
+- **ALWAYS** iteratively debug and fix issues before committing changes
+- **NEVER** commit code that hasn't been verified to work as intended
+- **ALWAYS** run tests before committing changes: `npm test`
+- **ALWAYS** run lint/typecheck before committing: Check package.json for lint commands
+- **ALWAYS** investigate and fix test failures or compilation errors before proceeding
+- If tests fail due to existing codebase issues, document the failures and work around them
+- Run specific test suites when working on focused areas: `npm test -- --testPathPattern="pattern"`
+- When creating new functionality, write corresponding tests following existing patterns
+- Start the relevant servers (API and/or web) to verify functionality works end-to-end
+- Test user-facing features in the browser to ensure they display and behave correctly
+
+## Debugging Protocol
+- When encountering TypeScript compilation errors, read and fix them systematically
+- When tests fail, analyze the failure output and resolve root causes
+- Check for missing dependencies, incorrect imports, or type mismatches
+- Use `npm run build` to verify TypeScript compilation before testing
+- Always verify changes work end-to-end before committing
+
 ## Commands to Remember
 - Build project: `npm run build`
+- Run tests: `npm test`
 - Lint/typecheck: Check package.json scripts for available lint commands
+- Run specific tests: `npm test -- --testPathPattern="pattern"`

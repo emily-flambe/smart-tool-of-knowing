@@ -11,6 +11,7 @@ const mockIssue: LinearIssue = {
   title: 'Implement user authentication flow',
   priority: 2,
   estimate: 5,
+  url: 'https://linear.app/team/issue/ENG-123',
   state: { id: '1', name: 'To Do', type: 'unstarted' },
   project: { id: '1', name: 'Auth System', color: '#3b82f6' },
   assignee: { id: '1', name: 'John Doe', email: 'john@example.com' },

@@ -19,6 +19,7 @@ const mockIssues: LinearIssue[] = [
     title: 'Implement authentication',
     priority: 2,
     estimate: 5,
+    url: 'https://linear.app/team/issue/ENG-123',
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '1', name: 'Auth System', color: '#3b82f6' },
     labels: []
@@ -28,6 +29,7 @@ const mockIssues: LinearIssue[] = [
     identifier: 'ENG-124',
     title: 'Add password reset',
     priority: 3,
+    url: 'https://linear.app/team/issue/ENG-124',
     estimate: 3,
     state: { id: '1', name: 'To Do', type: 'unstarted' },
     project: { id: '1', name: 'Auth System', color: '#3b82f6' },

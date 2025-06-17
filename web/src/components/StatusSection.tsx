@@ -129,7 +129,14 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
   statusId,
   groupByEngineer = false
 }) => {
-  const totalPoints = issues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+  const totalPoints = issues.reduce((sum, issue) => {
+    const estimate = issue.estimate
+    if (estimate === null || estimate === undefined) {
+      console.debug(`Issue ${issue.identifier} has no estimate in status section`)
+      return sum + 0
+    }
+    return sum + estimate
+  }, 0)
   const issueCount = issues.length
 
   const getEngineerForIssue = (issue: LinearIssue): TeamMember | undefined => {
@@ -140,7 +147,7 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
   const groupedIssues = React.useMemo(() => {
     if (groupByEngineer) {
       const grouped: Record<string, LinearIssue[]> = {
-        'unassigned': []
+        'unassigned': [] // Will contain issues without assignees
       }
 
       // Initialize groups for all team members
@@ -166,9 +173,9 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
 
       return grouped
     } else {
-      // Group by project and sort by estimate within each project
+      // Group by project and sort by estimate within each project  
       const grouped: Record<string, LinearIssue[]> = {
-        'no-project': []
+        'no-project': [] // Will contain issues without projects
       }
 
       // Group issues by project
@@ -262,8 +269,15 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 
                 const engineer = engineerId === 'unassigned' 
                   ? null 
-                  : teamMembers.find(m => m.id === engineerId)
-                const groupPoints = groupIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+                  : teamMembers.find(m => m.id === engineerId) || null
+                const groupPoints = groupIssues.reduce((sum, issue) => {
+                  const estimate = issue.estimate
+                  if (estimate === null || estimate === undefined) {
+                    console.debug(`Issue ${issue.identifier} has no estimate in engineer group`)
+                    return sum + 0
+                  }
+                  return sum + estimate
+                }, 0)
                 
                 return (
                   <EngineerDropColumn
@@ -295,7 +309,14 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 const project = projectId === 'no-project' 
                   ? null 
                   : issues.find(i => i.project?.id === projectId)?.project
-                const projectPoints = projectIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+                const projectPoints = projectIssues.reduce((sum, issue) => {
+                  const estimate = issue.estimate
+                  if (estimate === null || estimate === undefined) {
+                    console.debug(`Issue ${issue.identifier} has no estimate in project group`)
+                    return sum + 0
+                  }
+                  return sum + estimate
+                }, 0)
                 
                 return (
                   <div key={`project-${projectId}`} className="space-y-3">
