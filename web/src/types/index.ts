@@ -40,6 +40,8 @@ export interface LinearCycle {
   endsAt: string
   completedAt?: string
   issues: LinearIssue[]
+  status?: 'active' | 'completed' | 'future'
+  isActive?: boolean
 }
 
 export interface TeamMember {

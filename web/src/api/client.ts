@@ -227,5 +227,16 @@ export const planningApi = {
   async getTeamMembers(): Promise<TeamMember[]> {
     const response = await api.get('/team-members')
     return response.data
+  },
+
+  async generateNewsletter(): Promise<any> {
+    const response = await api.post('/newsletter/generate')
+    console.log('Newsletter API response:', response.data)
+    // API returns { success: true, data: actualNewsletterData }
+    if (response.data.success) {
+      return response.data.data
+    } else {
+      throw new Error(response.data.message || 'Failed to generate newsletter')
+    }
   }
 }

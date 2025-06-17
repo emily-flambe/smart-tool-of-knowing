@@ -29,7 +29,7 @@ export const CycleSelector: React.FC<CycleSelectorProps> = ({
         <option value="">Choose a cycle...</option>
         {cycles.map((cycle) => (
           <option key={cycle.id} value={cycle.id}>
-            {cycle.name} (#{cycle.number})
+            {cycle.isActive ? '🟢 ' : ''}{cycle.name} (#{cycle.number}){cycle.isActive ? ' - Active' : ''}
           </option>
         ))}
       </select>
@@ -37,6 +37,11 @@ export const CycleSelector: React.FC<CycleSelectorProps> = ({
       {selectedCycle && (
         <div className="mt-2 text-sm text-gray-600">
           {new Date(selectedCycle.startsAt).toLocaleDateString()} - {new Date(selectedCycle.endsAt).toLocaleDateString()}
+          {selectedCycle.isActive && (
+            <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+              Active
+            </span>
+          )}
         </div>
       )}
     </div>

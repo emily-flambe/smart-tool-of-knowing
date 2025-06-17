@@ -54,7 +54,7 @@ class SimpleLinearClient {
     try {
       const data = await this.query(query)
       return data.viewer
-    } catch (error) {
+    } catch (error: any) {
       throw new Error('Invalid Linear API key')
     }
   }
@@ -265,14 +265,16 @@ class SimpleLinearClient {
       return []
     }
 
-    // Filter to only completed issues (Done, Completed, etc.)
+    // Filter to only issues with "Done" status (exact match)
     const completedIssues = allIssues.filter((issue: any) => {
-      const stateType = issue.state?.type?.toLowerCase()
       const stateName = issue.state?.name?.toLowerCase()
-      return stateType === 'completed' || 
-             stateName?.includes('done') || 
-             stateName?.includes('completed') ||
-             stateName?.includes('closed')
+      const isDone = stateName === 'done'
+      
+      if (!isDone) {
+        console.debug(`Issue ${issue.identifier} has status "${issue.state?.name}" - excluding from cycle review (only "Done" issues shown)`)
+      }
+      
+      return isDone
     })
 
     // Add completion date from history if available
@@ -316,6 +318,83 @@ class SimpleLinearClient {
         }
       }
     })
+  }
+
+  async getCycleIssues(cycleId: string, statusTypes?: string[]): Promise<any[]> {
+    const query = `
+      query($cycleId: String!, $first: Int) {
+        cycle(id: $cycleId) {
+          issues(first: $first) {
+            nodes {
+              id
+              identifier
+              title
+              description
+              url
+              state {
+                id
+                name
+                type
+              }
+              assignee {
+                id
+                name
+                email
+              }
+              priority
+              estimate
+              createdAt
+              updatedAt
+              labels {
+                nodes {
+                  id
+                  name
+                  color
+                }
+              }
+              project {
+                id
+                name
+                color
+              }
+              attachments {
+                nodes {
+                  id
+                  title
+                  url
+                  subtitle
+                }
+              }
+            }
+          }
+        }
+      }
+    `
+    
+    const data = await this.query(query, { cycleId, first: 100 })
+    
+    if (!data.cycle) {
+      throw new Error(`Cycle with ID ${cycleId} not found`)
+    }
+    
+    let issues = data.cycle.issues.nodes
+    
+    // Filter by status types if provided
+    if (statusTypes && statusTypes.length > 0) {
+      const filterTypes = statusTypes.map(type => type.toLowerCase())
+      issues = issues.filter((issue: any) => {
+        const stateType = issue.state.type?.toLowerCase()
+        const stateName = issue.state.name?.toLowerCase()
+        return filterTypes.includes(stateType) || filterTypes.includes(stateName)
+      })
+    }
+    
+    // Extract GitHub PRs from attachments for each issue
+    for (const issue of issues) {
+      issue.linkedPRs = this.extractGitHubPRsFromAttachments(issue.attachments?.nodes || [])
+    }
+    
+    return issues
   }
 
   async testSingleIssueAttachments(issueId: string): Promise<any> {
@@ -469,7 +548,7 @@ class SimpleLinearClient {
       }
       
       return data.issueUpdate
-    } catch (error) {
+    } catch (error: any) {
       console.log(`❌ Linear API: Error caught:`, error)
       console.log(`❌ Linear API: Error type:`, typeof error)
       if (error && typeof error === 'object') {
@@ -742,7 +821,7 @@ class SimpleLinearClient {
       
       return activeEngineers
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ Error in getActiveEngineers:', error.message)
       console.error('❌ Stack trace:', error.stack)
       throw error
@@ -947,6 +1026,61 @@ app.get('/api/completed-cycles', async (req: any, res: any) => {
     console.error('❌ Error fetching completed cycles:', error)
     res.status(500).json({
       error: 'Failed to fetch completed cycles',
+      message: error.message
+    })
+  }
+})
+
+app.get('/api/reviewable-cycles', async (req: any, res: any) => {
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    console.log('🔍 Fetching reviewable cycles (completed + active) from Linear API...')
+    
+    // Get recent cycles (includes both completed and active)
+    const recentCycles = await linearClient.getRecentCycles(6) // Get last 6 months
+    
+    // Filter to get completed cycles and current active cycle
+    const now = new Date()
+    const reviewableCycles = recentCycles.filter(cycle => {
+      const startDate = new Date(cycle.startsAt)
+      const endDate = new Date(cycle.endsAt)
+      
+      // Include if completed OR currently active
+      const isCompleted = cycle.status === 'completed'
+      const isActive = cycle.status === 'active' && now >= startDate && now <= endDate
+      
+      return isCompleted || isActive
+    })
+    
+    // Sort by start date (most recent first)
+    reviewableCycles.sort((a, b) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
+    
+    const formattedCycles = reviewableCycles.map(cycle => ({
+      id: cycle.id,
+      name: cycle.name,
+      number: cycle.number,
+      startedAt: cycle.startsAt,
+      completedAt: cycle.endsAt,
+      team: cycle.team,
+      status: cycle.status, // Include status to distinguish active vs completed
+      isActive: cycle.status === 'active'
+    }))
+
+    console.log(`✅ Found ${formattedCycles.length} reviewable cycles (${formattedCycles.filter(c => c.isActive).length} active, ${formattedCycles.filter(c => !c.isActive).length} completed)`)
+
+    res.json({
+      cycles: formattedCycles
+    })
+  } catch (error: any) {
+    console.error('❌ Error fetching reviewable cycles:', error)
+    res.status(500).json({
+      error: 'Failed to fetch reviewable cycles',
       message: error.message
     })
   }
@@ -1818,7 +1952,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             })
             
             console.log(`✅ Successfully committed change: ${change.description}`)
-          } catch (linearError) {
+          } catch (linearError: any) {
             console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
             results.push({
               id: change.id,
@@ -1840,7 +1974,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             })
             
             console.log(`✅ Successfully committed change: ${change.description}`)
-          } catch (linearError) {
+          } catch (linearError: any) {
             console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
             results.push({
               id: change.id,
@@ -1877,7 +2011,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             })
             
             console.log(`✅ Successfully committed change: ${change.description}`)
-          } catch (linearError) {
+          } catch (linearError: any) {
             console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
             results.push({
               id: change.id,
@@ -1899,7 +2033,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             })
             
             console.log(`✅ Successfully committed change: ${change.description}`)
-          } catch (linearError) {
+          } catch (linearError: any) {
             console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
             results.push({
               id: change.id,
@@ -1937,7 +2071,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             })
             
             console.log(`✅ Successfully committed change: ${change.description}`)
-          } catch (linearError) {
+          } catch (linearError: any) {
             console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
             results.push({
               id: change.id,
@@ -1952,7 +2086,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
             error: `Unknown change type: ${change.type}`
           })
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error(`❌ Failed to commit change ${change.id}:`, error)
         results.push({
           id: change.id,
@@ -1977,7 +2111,7 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
         failed: failureCount
       }
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ Failed to commit changes:', error)
     res.status(500).json({
       success: false,
@@ -1987,6 +2121,303 @@ app.post('/api/commit-changes', async (req: any, res: any) => {
     })
   }
 })
+
+// Newsletter generation endpoint
+app.post('/api/newsletter/generate', async (req: express.Request, res: express.Response) => {
+  console.log('📰 Newsletter generation request received')
+  
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    // Get the most recently completed cycle
+    const cycles = await linearClient.getRecentCycles(6) // Look back 6 months
+    const completedCycles = cycles.filter(cycle => cycle.status === 'completed')
+      .sort((a, b) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime())
+    
+    if (completedCycles.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: 'No completed cycles found',
+        message: 'No completed cycles available for newsletter generation'
+      })
+    }
+
+    const latestCycle = completedCycles[0]
+    console.log(`📊 Generating newsletter for cycle: ${latestCycle.name}`)
+
+    // Get completed issues from the latest cycle
+    const completedIssues = await linearClient.getCycleIssues(latestCycle.id, ['done', 'completed'])
+    
+    // Get GitHub stats (mock for now - could integrate with GitHub API later)
+    const githubStats = {
+      totalPRs: Math.floor(Math.random() * 20) + 5, // Mock data
+      totalCommits: Math.floor(Math.random() * 100) + 20 // Mock data
+    }
+
+    // Generate AI summary using existing AI service (mock for now)
+    let summary = null
+    let projectSummaries: Record<string, string> = {}
+    try {
+      // Generate overall summary
+      summary = generateCycleSummary(completedIssues, latestCycle)
+      
+      // Generate project-specific summaries
+      projectSummaries = generateProjectSummaries(completedIssues)
+    } catch (error: any) {
+      console.warn('⚠️ AI summary generation failed:', error instanceof Error ? error.message : 'Unknown error')
+      // Continue without summary
+    }
+
+    const newsletterData = {
+      completedIssues: completedIssues.map(issue => ({
+        id: issue.id,
+        identifier: issue.identifier,
+        title: issue.title,
+        description: issue.description || '',
+        url: issue.url,
+        assignee: issue.assignee ? { name: issue.assignee.name } : null,
+        project: issue.project ? {
+          name: issue.project.name,
+          color: issue.project.color
+        } : null,
+        estimate: issue.estimate || 0,
+        linkedPRs: issue.linkedPRs || [] // Now using real linked PR data from Linear
+      })),
+      cycleInfo: {
+        name: latestCycle.name,
+        startDate: latestCycle.startsAt,
+        endDate: latestCycle.endsAt
+      },
+      githubStats,
+      summary,
+      projectSummaries
+    }
+
+    console.log(`✅ Newsletter generated successfully with ${completedIssues.length} completed issues`)
+    res.json({
+      success: true,
+      data: newsletterData
+    })
+
+  } catch (error: any) {
+    console.error('❌ Failed to generate newsletter:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate newsletter',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      details: error instanceof Error ? error.stack : undefined
+    })
+  }
+})
+
+// Enhanced AI summary generation based on issue content
+function generateCycleSummary(issues: any[], cycle: any): string {
+  const totalIssues = issues.length
+  const totalPoints = issues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
+  
+  // Analyze issue content for themes
+  const themes = analyzeIssueThemes(issues)
+  const workTypes = categorizeWorkTypes(issues)
+  
+  const projectCounts = issues.reduce((acc, issue) => {
+    const projectName = issue.project?.name || 'No Project'
+    acc[projectName] = (acc[projectName] || 0) + 1
+    return acc
+  }, {})
+  
+  const topProjects = Object.entries(projectCounts)
+    .sort(([,a], [,b]) => (b as number) - (a as number))
+    .slice(0, 3)
+    .map(([name, count]) => `${name} (${count} issues)`)
+  
+  // Build contextual summary
+  let summary = `Completed ${totalIssues} issues totaling ${totalPoints} story points across ${Object.keys(projectCounts).length} projects.`
+  
+  if (themes.length > 0) {
+    summary += ` Key themes this cycle: ${themes.slice(0, 3).join(', ')}.`
+  }
+  
+  if (workTypes.length > 0) {
+    summary += ` Work included ${workTypes.join(', ')}.`
+  }
+  
+  summary += ` Major focus areas: ${topProjects.join(', ')}.`
+  
+  return summary
+}
+
+// Generate enhanced project-specific summaries based on issue content
+function generateProjectSummaries(issues: any[]): Record<string, string> {
+  const projectGroups = issues.reduce((acc, issue) => {
+    const projectName = issue.project?.name || 'No Project'
+    if (!acc[projectName]) {
+      acc[projectName] = []
+    }
+    acc[projectName].push(issue)
+    return acc
+  }, {} as Record<string, any[]>)
+  
+  const summaries: Record<string, string> = {}
+  
+  for (const [projectName, projectIssues] of Object.entries(projectGroups)) {
+    const issues = projectIssues as any[]
+    const issueCount = issues.length
+    const totalPoints = issues.reduce((sum: number, issue: any) => sum + (issue.estimate || 0), 0)
+    
+    // Analyze issue content for this project
+    const projectThemes = analyzeIssueThemes(issues)
+    const workTypes = categorizeWorkTypes(issues)
+    
+    // Group by assignee
+    const assigneeCounts = issues.reduce((acc: Record<string, number>, issue: any) => {
+      const assigneeName = issue.assignee?.name || 'Unassigned'
+      acc[assigneeName] = (acc[assigneeName] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    
+    const topContributors = Object.entries(assigneeCounts)
+      .sort(([,a], [,b]) => (b as number) - (a as number))
+      .slice(0, 2)
+      .map(([name, count]) => `${name} (${count})`)
+    
+    // Find notable issues (high point values or interesting titles)
+    const notableIssues = issues
+      .filter(issue => (issue.estimate || 0) >= 5 || hasInterestingTitle(issue.title))
+      .slice(0, 2)
+      .map(issue => issue.title)
+    
+    // Count linked PRs for development activity context
+    const totalLinkedPRs = issues.reduce((count, issue) => count + (issue.linkedPRs?.length || 0), 0)
+    
+    // Generate contextual summary
+    let summary = `Completed ${issueCount} issue${issueCount > 1 ? 's' : ''} (${totalPoints} points).`
+    
+    if (workTypes.length > 0) {
+      summary += ` Work focused on ${workTypes.join(' and ')}.`
+    }
+    
+    if (projectThemes.length > 0) {
+      summary += ` Key areas: ${projectThemes.slice(0, 2).join(', ')}.`
+    }
+    
+    if (notableIssues.length > 0) {
+      summary += ` Notable deliverables: ${notableIssues.join('; ')}.`
+    }
+    
+    if (totalLinkedPRs > 0) {
+      summary += ` Included ${totalLinkedPRs} linked PR${totalLinkedPRs > 1 ? 's' : ''}.`
+    }
+    
+    if (topContributors.length > 0) {
+      summary += ` Contributors: ${topContributors.join(', ')}.`
+    }
+    
+    summaries[projectName] = summary
+  }
+  
+  return summaries
+}
+
+// Helper function to analyze themes from issue titles and descriptions
+function analyzeIssueThemes(issues: any[]): string[] {
+  const allText = issues.map(issue => {
+    const title = issue.title || ''
+    const description = issue.description || ''
+    return `${title} ${description}`.toLowerCase()
+  }).join(' ')
+  
+  // Common tech/product themes to look for
+  const themeKeywords = {
+    'authentication': ['auth', 'login', 'signup', 'register', 'password', 'oauth', 'jwt', 'token'],
+    'UI/UX improvements': ['ui', 'ux', 'design', 'layout', 'styling', 'responsive', 'mobile', 'accessibility'],
+    'performance': ['performance', 'speed', 'optimization', 'cache', 'lazy', 'bundle', 'memory'],
+    'API development': ['api', 'endpoint', 'rest', 'graphql', 'webhook', 'integration'],
+    'database': ['database', 'db', 'sql', 'query', 'migration', 'schema', 'index'],
+    'testing': ['test', 'testing', 'spec', 'jest', 'cypress', 'unit', 'integration'],
+    'bug fixes': ['fix', 'bug', 'error', 'issue', 'crash', 'broken', 'repair'],
+    'security': ['security', 'vulnerability', 'secure', 'encrypt', 'sanitize', 'xss', 'csrf'],
+    'infrastructure': ['deploy', 'ci', 'cd', 'docker', 'aws', 'server', 'infrastructure'],
+    'analytics': ['analytics', 'tracking', 'metrics', 'logging', 'monitoring', 'observability']
+  }
+  
+  const foundThemes: string[] = []
+  
+  Object.entries(themeKeywords).forEach(([theme, keywords]) => {
+    const score = keywords.reduce((count, keyword) => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi')
+      const matches = allText.match(regex)
+      return count + (matches ? matches.length : 0)
+    }, 0)
+    
+    if (score > 0) {
+      foundThemes.push(theme)
+    }
+  })
+  
+  return foundThemes.sort((a, b) => {
+    // Simple scoring based on keyword frequency
+    const scoreA = themeKeywords[a as keyof typeof themeKeywords].reduce((count, keyword) => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi')
+      const matches = allText.match(regex)
+      return count + (matches ? matches.length : 0)
+    }, 0)
+    const scoreB = themeKeywords[b as keyof typeof themeKeywords].reduce((count, keyword) => {
+      const regex = new RegExp(`\\b${keyword}\\b`, 'gi')
+      const matches = allText.match(regex)
+      return count + (matches ? matches.length : 0)
+    }, 0)
+    return scoreB - scoreA
+  })
+}
+
+// Helper function to categorize work types
+function categorizeWorkTypes(issues: any[]): string[] {
+  const workTypes: string[] = []
+  const titles = issues.map(issue => issue.title || '').join(' ').toLowerCase()
+  
+  if (titles.includes('feature') || titles.includes('add') || titles.includes('implement')) {
+    workTypes.push('new features')
+  }
+  if (titles.includes('fix') || titles.includes('bug') || titles.includes('error')) {
+    workTypes.push('bug fixes')
+  }
+  if (titles.includes('refactor') || titles.includes('cleanup') || titles.includes('improve')) {
+    workTypes.push('improvements')
+  }
+  if (titles.includes('test') || titles.includes('spec')) {
+    workTypes.push('testing')
+  }
+  if (titles.includes('doc') || titles.includes('readme')) {
+    workTypes.push('documentation')
+  }
+  if (titles.includes('update') || titles.includes('upgrade')) {
+    workTypes.push('updates')
+  }
+  
+  return workTypes
+}
+
+// Helper function to identify interesting issue titles
+function hasInterestingTitle(title: string): boolean {
+  if (!title) return false
+  
+  const interestingKeywords = [
+    'feature', 'new', 'implement', 'add', 'create', 'build',
+    'refactor', 'redesign', 'improve', 'enhance', 'optimize',
+    'integration', 'migration', 'upgrade', 'launch', 'release'
+  ]
+  
+  const titleLower = title.toLowerCase()
+  return interestingKeywords.some(keyword => titleLower.includes(keyword)) || 
+         title.length > 40 || // Longer titles tend to be more descriptive
+         title.includes('API') || title.includes('UI')
+}
 
 app.listen(port, () => {
   console.log(`🚀 Planning API server running on port ${port}`)

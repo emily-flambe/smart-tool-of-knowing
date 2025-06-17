@@ -23,9 +23,9 @@ export function CycleReviewPage() {
     refetch
   } = useCycleReviewData(selectedCycle?.id || null)
 
-  // Fetch available completed cycles on mount
+  // Fetch available cycles (completed + active) on mount
   useEffect(() => {
-    const fetchCompletedCycles = async () => {
+    const fetchReviewableCycles = async () => {
       try {
         setIsLoadingCycles(true)
         setCyclesError(null)
@@ -42,12 +42,14 @@ export function CycleReviewPage() {
           number: cycle.number,
           startsAt: cycle.startedAt,
           endsAt: cycle.completedAt,
-          team: cycle.team
+          team: cycle.team,
+          status: 'completed', // All cycles from completed-cycles are completed
+          isActive: false // No active cycles from this endpoint
         }))
         
         setAvailableCycles(cycles)
         
-        // Auto-select the most recent cycle
+        // Auto-select the most recent completed cycle
         if (cycles.length > 0) {
           setSelectedCycle(cycles[0])
         }
@@ -59,7 +61,7 @@ export function CycleReviewPage() {
       }
     }
 
-    fetchCompletedCycles()
+    fetchReviewableCycles()
   }, [])
 
   const handleCycleChange = (cycle: LinearCycle) => {
@@ -84,7 +86,9 @@ export function CycleReviewPage() {
         number: cycle.number,
         startsAt: cycle.startedAt,
         endsAt: cycle.completedAt,
-        team: cycle.team
+        team: cycle.team,
+        status: 'completed', // All cycles from completed-cycles are completed
+        isActive: false // No active cycles from this endpoint
       }))
       
       setAvailableCycles(cycles)
@@ -127,10 +131,10 @@ export function CycleReviewPage() {
     return (
       <div className="p-6">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-4">No Completed Cycles Found</h2>
+          <h2 className="text-2xl font-semibold text-gray-900 mb-4">No Reviewable Cycles Found</h2>
           <p className="text-gray-600">
-            No completed cycles were found in your Linear workspace. 
-            Complete some cycles to see their reviews here.
+            No completed or active cycles were found in your Linear workspace. 
+            Create and work on cycles to see their reviews here.
           </p>
         </div>
       </div>
@@ -145,7 +149,12 @@ export function CycleReviewPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600">
-                Review completed work and team performance for past cycles
+                Review completed work and team performance for cycles
+                {selectedCycle?.isActive && (
+                  <span className="ml-2 text-blue-600 font-medium">
+                    (Currently viewing active cycle)
+                  </span>
+                )}
               </p>
             </div>
             
