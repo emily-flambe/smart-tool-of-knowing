@@ -610,7 +610,7 @@ export function PlanningPage() {
     // Get issues from future cycles (cycles that haven't started yet)
     const futureCycleIssues = allIssues.filter(issue => {
       if (!issue.cycle?.id || issue.cycle.id === selectedCycle?.id) return false
-      const cycle = processedData.cycles.find(c => c.id === issue.cycle.id)
+      const cycle = processedData.cycles.find(c => c.id === issue.cycle?.id)
       const isFutureCycle = cycle && new Date(cycle.startsAt) > now && !cycle.completedAt
       return isFutureCycle && isBacklogOrTodoStatus(issue)
     })

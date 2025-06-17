@@ -262,7 +262,7 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
                 
                 const engineer = engineerId === 'unassigned' 
                   ? null 
-                  : teamMembers.find(m => m.id === engineerId)
+                  : teamMembers.find(m => m.id === engineerId) || null
                 const groupPoints = groupIssues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
                 
                 return (

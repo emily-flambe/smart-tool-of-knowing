@@ -3,6 +3,7 @@ import { LinearCycle } from '../types'
 import { CycleSelector } from '../components/CycleSelector'
 import { OverviewCards } from '../components/OverviewCards'
 import { ErrorMessage } from '../components/ErrorMessage'
+import { TestConnectionButton } from '../components/TestConnectionButton'
 import { useCycleReviewData } from '../hooks/useCycleReviewData'
 
 export function CycleReviewPage() {
@@ -61,6 +62,44 @@ export function CycleReviewPage() {
     setSelectedCycle(cycle)
   }
 
+  const handleRefreshData = async () => {
+    // Refresh the cycles list
+    try {
+      setIsLoadingCycles(true)
+      setCyclesError(null)
+      
+      const response = await fetch('/api/completed-cycles')
+      if (!response.ok) {
+        throw new Error(`Failed to fetch cycles: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const cycles = data.cycles.map((cycle: any) => ({
+        id: cycle.id,
+        name: cycle.name,
+        number: cycle.number,
+        startsAt: cycle.startedAt,
+        endsAt: cycle.completedAt,
+        team: cycle.team
+      }))
+      
+      setAvailableCycles(cycles)
+      
+      // If current cycle is still in the list, keep it selected, otherwise select the most recent
+      if (selectedCycle && cycles.find((c: LinearCycle) => c.id === selectedCycle.id)) {
+        // Keep current selection but trigger a refetch of its data
+        refetch()
+      } else if (cycles.length > 0) {
+        setSelectedCycle(cycles[0])
+      }
+    } catch (error: any) {
+      console.error('Error refreshing cycles:', error)
+      setCyclesError(error.message)
+    } finally {
+      setIsLoadingCycles(false)
+    }
+  }
+
   if (isLoadingCycles) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -108,6 +147,26 @@ export function CycleReviewPage() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <TestConnectionButton />
+              
+              <button
+                onClick={handleRefreshData}
+                disabled={isLoadingCycles}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoadingCycles ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-gray-700 inline-block" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Refreshing...
+                  </>
+                ) : (
+                  'Refresh Data'
+                )}
+              </button>
+              
               <CycleSelector
                 cycles={availableCycles}
                 selectedCycle={selectedCycle}
