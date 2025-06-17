@@ -85,6 +85,10 @@
 - **ALWAYS** ask the user to kill and restart the API server when needed
 - Do not use process management commands like `kill`, `pkill`, `killall`, or similar
 
+## File Protection
+- **NEVER** delete the changelog file
+- Preserve existing changelog entries when making updates
+
 ## Commands to Remember
 - Build project: `npm run build`
 - Lint/typecheck: Check package.json scripts for available lint commands
