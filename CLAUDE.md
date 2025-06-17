@@ -80,6 +80,15 @@
 - **Sessions:** Track new chat sessions with `### Session N` headers
 - **Log file location:** `conversation-log.md` (root of project, excluded from git)
 
+## API Server Management
+- **NEVER** attempt to kill or restart the API server yourself
+- **ALWAYS** ask the user to kill and restart the API server when needed
+- Do not use process management commands like `kill`, `pkill`, `killall`, or similar
+
+## File Protection
+- **NEVER** delete the changelog file
+- Preserve existing changelog entries when making updates
+
 ## Commands to Remember
 - Build project: `npm run build`
 - Lint/typecheck: Check package.json scripts for available lint commands
