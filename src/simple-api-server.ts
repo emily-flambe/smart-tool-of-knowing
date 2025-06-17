@@ -115,6 +115,16 @@ class SimpleLinearClient {
       .sort((a: any, b: any) => new Date(b.startsAt).getTime() - new Date(a.startsAt).getTime())
   }
 
+  async getCompletedCycles(monthsBack: number = 6): Promise<any[]> {
+    const cycles = await this.getRecentCycles(monthsBack)
+    const currentDate = new Date()
+    
+    // Filter to only completed cycles and sort by completion date (most recent first)
+    return cycles
+      .filter(cycle => cycle.status === 'completed')
+      .sort((a: any, b: any) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime())
+  }
+
   async getIssuesInCycle(cycleId: string): Promise<any[]> {
     const query = `
       query($cycleId: String!) {
@@ -687,6 +697,39 @@ app.get('/api/cycles', (req: any, res: any) => {
       issues: []
     }
   ])
+})
+
+app.get('/api/completed-cycles', async (req: any, res: any) => {
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    console.log('🔍 Fetching completed cycles from Linear API...')
+    const completedCycles = await linearClient.getCompletedCycles()
+    
+    const formattedCycles = completedCycles.map(cycle => ({
+      id: cycle.id,
+      name: cycle.name,
+      number: cycle.number,
+      startedAt: cycle.startsAt,
+      completedAt: cycle.endsAt,
+      team: cycle.team
+    }))
+
+    res.json({
+      cycles: formattedCycles
+    })
+  } catch (error: any) {
+    console.error('❌ Error fetching completed cycles:', error)
+    res.status(500).json({
+      error: 'Failed to fetch completed cycles',
+      message: error.message
+    })
+  }
 })
 
 app.get('/api/backlog', async (req: any, res: any) => {
