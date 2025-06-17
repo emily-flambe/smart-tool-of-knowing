@@ -34,11 +34,17 @@ The Cycle Review feature will provide teams with an informative breakdown of wor
      - Total issues completed
      - Total story points delivered
      - Number of PRs merged
-     - Number of contributors
-     - Cycle velocity (points/week)
+   
+   - **Newsletter View**
+     - Digestible overview organized by project
+     - Projects sorted by total points (descending)
+     - Hyperlinked Linear IDs with issue titles and assignees
+     - Copy-to-clipboard functionality for email newsletters
+     - Plain text format preview for easy copying
    
    - **By Project Breakdown**
      - Issues and points completed per Linear project
+     - Full project list always displayed (no truncation)
      - Key features/epics delivered
      - Associated technical changes (PRs)
    
@@ -53,10 +59,12 @@ The Cycle Review feature will provide teams with an informative breakdown of wor
      - Distribution of work types
 
 4. **Issue Details**
-   - Issue title and description (truncated)
+   - Issue title and description with hyperlinks to Linear issues
    - Story points
    - Assignee
    - Labels/tags
+   - Sortable table with columns: Issue, Project, Assignee, Points
+   - All issue identifiers hyperlinked to their Linear URLs
    - Linked pull requests with:
      - PR title
      - Files changed count
@@ -78,28 +86,34 @@ The Cycle Review feature will provide teams with an informative breakdown of wor
    |  [Cycle Selector v] [Export ▼]  |
    +----------------------------------+
    |  Overview Cards                  |
-   |  [Issues] [Points] [PRs] [Team] |
+   |  [Issues] [Points] [Projects]    |
    +----------------------------------+
    |  Tab Navigation                  |
-   |  [Summary | By Project | By      |
-   |   Engineer | Timeline]           |
+   |  [Summary | Newsletter View]    |
    +----------------------------------+
    |  Content Area                    |
-   |  (Dynamic based on selected tab) |
+   |  - Summary: Sortable Issues Table|
+   |  - Newsletter: Project-grouped   |
+   |    issues with copy-to-clipboard |
+   |  - Hyperlinked Issue IDs         |
    +----------------------------------+
    ```
 
 2. **Visual Elements**
-   - Cards for high-level metrics
-   - Collapsible sections for detailed views
+   - Cards for high-level metrics (Issues, Points, Projects)
+   - Sortable table for completed issues with proper alignment
+   - Hyperlinked issue identifiers that open in Linear
+   - Full project lists without truncation
    - Progress bars for project/person contributions
    - Timeline visualization for issue completion over cycle
    - Color coding by project (matching Linear colors)
+   - Cycle display by number (e.g., "Cycle 77") not "Unnamed Cycle"
 
 3. **Interactive Features**
    - Click on metrics to drill down
+   - Sort issues table by any column header (Issue, Project, Assignee, Points)
+   - Hyperlinked issue IDs that open Linear issues in new tabs
    - Expand/collapse detailed sections
-   - Sort tables by different columns
    - Filter by project or assignee within views
 
 ## Technical Architecture
@@ -188,9 +202,9 @@ The Cycle Review feature will provide teams with an informative breakdown of wor
    - Include issue details and metadata
    - Calculate aggregate statistics
 
-3. Implement GitHub integration
-   - Search PRs by date range of cycle
-   - Match PRs to Linear issues via regex
+3. Implement GitHub integration (see detailed plan below)
+   - Query Linear API for issue attachments
+   - Use GitHub CLI for PR matching fallback
    - Store PR metadata
 
 #### Phase 2: Frontend Structure
@@ -206,8 +220,8 @@ The Cycle Review feature will provide teams with an informative breakdown of wor
 4. Implement timeline visualization
 
 #### Phase 4: GitHub Integration
-1. Connect to GitHub API
-2. Match PRs to issues
+1. Implement Linear attachments query
+2. Add GitHub CLI fallback matching
 3. Display linked PR information
 4. Add PR stats to summaries
 
@@ -281,6 +295,158 @@ Returns GitHub PR data linked to cycle issues
   ]
 }
 ```
+
+### GitHub Integration Strategy
+
+Based on the Linear API documentation, there are two approaches to linking GitHub pull requests with Linear issues:
+
+#### Approach 1: Linear Attachments API (Primary)
+
+Linear automatically creates attachments for GitHub pull requests when they are linked to issues. This happens when:
+- PR descriptions contain Linear issue references (e.g., "Fixes DDX-123", "Closes ENG-456")
+- Branch names include issue identifiers
+- Commit messages reference Linear issues
+
+**Implementation Plan:**
+
+1. **Query Linear Attachments**
+   ```graphql
+   query GetIssueAttachments($issueId: String!) {
+     issue(id: $issueId) {
+       attachments(first: 10) {
+         nodes {
+           id
+           title
+           url
+           createdAt
+           creator {
+             name
+           }
+           metadata
+         }
+       }
+     }
+   }
+   ```
+
+2. **Filter GitHub Attachments**
+   - Filter attachments by URL pattern (github.com/org/repo/pull/)
+   - Extract PR number from URL
+   - Parse attachment metadata for PR details
+
+3. **Enrich PR Data**
+   - Use GitHub API to fetch additional PR metadata
+   - Get merge date, file changes, lines added/removed
+   - Store author, reviewers, and status information
+
+#### Approach 2: GitHub CLI Search (Fallback)
+
+For issues that don't have Linear attachments (due to missing references or manual linking), implement a fallback search using GitHub CLI:
+
+**Implementation Plan:**
+
+1. **Search Strategy**
+   ```bash
+   # Search PR titles and descriptions for Linear issue IDs
+   gh pr list --state merged --search "DDX-123 in:title,body"
+   
+   # Search by date range to limit scope
+   gh pr list --state merged --search "merged:2024-01-01..2024-01-14"
+   
+   # Search branch names for issue patterns
+   gh pr list --state merged --search "head:DDX-123"
+   ```
+
+2. **Pattern Matching**
+   - Search for issue identifiers in PR titles: `/(DDX|ENG|PROJ)-\d+/g`
+   - Search PR body text for "Fixes", "Closes", "Resolves" + issue ID
+   - Check branch names for issue patterns
+   - Parse commit messages in PR for issue references
+
+3. **Data Collection**
+   ```typescript
+   interface GitHubPRSearch {
+     searchByIssueId(issueId: string): Promise<PullRequest[]>;
+     searchByDateRange(start: Date, end: Date): Promise<PullRequest[]>;
+     searchByBranchPattern(pattern: string): Promise<PullRequest[]>;
+   }
+   ```
+
+#### Hybrid Implementation
+
+**Primary Flow:**
+1. For each completed issue in cycle, query Linear attachments API
+2. Filter for GitHub PR attachments
+3. Extract PR URLs and basic metadata
+
+**Fallback Flow:**
+1. For issues without GitHub attachments, search GitHub CLI
+2. Use multiple search patterns (title, body, branch, commits)
+3. Confidence scoring for matched PRs
+4. Manual verification flags for uncertain matches
+
+**Code Structure:**
+```typescript
+class GitHubIntegrationService {
+  async getLinkedPRs(issue: LinearIssue): Promise<LinkedPullRequest[]> {
+    // Primary: Linear attachments
+    const attachments = await this.getLinearAttachments(issue.id);
+    const attachedPRs = this.extractGitHubPRs(attachments);
+    
+    if (attachedPRs.length > 0) {
+      return await this.enrichPRData(attachedPRs);
+    }
+    
+    // Fallback: GitHub CLI search
+    const searchedPRs = await this.searchGitHubPRs(issue);
+    return await this.enrichPRData(searchedPRs);
+  }
+  
+  private async searchGitHubPRs(issue: LinearIssue): Promise<PullRequest[]> {
+    const patterns = [
+      `${issue.identifier} in:title`,
+      `${issue.identifier} in:body`,
+      `head:${issue.identifier}`,
+      `"Fixes ${issue.identifier}"`,
+      `"Closes ${issue.identifier}"`
+    ];
+    
+    const results = [];
+    for (const pattern of patterns) {
+      const prs = await this.githubCLI.searchPRs(pattern);
+      results.push(...prs);
+    }
+    
+    return this.deduplicateAndScore(results, issue);
+  }
+}
+```
+
+#### Data Synchronization
+
+**Caching Strategy:**
+- Cache Linear attachment data (refreshed when issues update)
+- Cache GitHub PR metadata (refreshed daily for active repos)
+- Store confidence scores for CLI-matched PRs
+
+**Update Triggers:**
+- Manual refresh button for recent cycles
+- Webhook support for real-time Linear attachment updates
+- Scheduled background refresh for GitHub data
+
+#### Error Handling
+
+**Common Issues:**
+- Rate limiting from GitHub API
+- Missing permissions for private repositories
+- Ambiguous issue ID matches (multiple PRs referencing same issue)
+- False positives from CLI search
+
+**Mitigation:**
+- Exponential backoff for API rate limits
+- Clear error messages for permission issues
+- Confidence scoring and manual review flags
+- User feedback mechanism for incorrect matches
 
 ### Configuration Requirements
 

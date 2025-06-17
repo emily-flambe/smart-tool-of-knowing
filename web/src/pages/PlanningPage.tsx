@@ -31,10 +31,10 @@ export function PlanningPage() {
   const [showCommitModal, setShowCommitModal] = useState<boolean>(false)
   const [successMessage, setSuccessMessage] = useState<string>('')
   const [filters, setFilters] = useState<FilterState>({
-    projects: [],
-    statuses: [],
-    assignees: [],
-    priorities: []
+    projects: [], // Will be populated when data loads
+    statuses: [], // Will be populated when data loads
+    assignees: [], // Will be populated when data loads
+    priorities: [] // Will be populated when data loads
   })
   
   const toggleSectionCollapse = (sectionId: string) => {
@@ -328,6 +328,7 @@ export function PlanningPage() {
     
     // If no filters are active, return empty results (show nothing)
     if (!hasActiveFilters) {
+      console.debug('No active filters - showing empty results')
       const empty: Record<string, LinearIssue[]> = {}
       Object.keys(categorizedIssues).forEach(categoryId => {
         empty[categoryId] = []
@@ -389,7 +390,7 @@ export function PlanningPage() {
     }
     
     const grouped: Record<string, LinearIssue[]> = {
-      'unassigned': []
+      'unassigned': [] // Will be populated with unassigned issues
     }
     const seenIssueIds = new Set<string>()
     
@@ -447,7 +448,10 @@ export function PlanningPage() {
   }, [processedData, groupByEngineer, filteredCategorizedIssues])
 
   const projectSummaries: ProjectSummary[] = useMemo(() => {
-    if (!cycleFilteredData) return []
+    if (!cycleFilteredData) {
+      console.debug('No cycle filtered data available for project summaries')
+      return []
+    }
     
     const projectMap = new Map<string, ProjectSummary>()
     
@@ -493,7 +497,10 @@ export function PlanningPage() {
   }
 
   const engineerSummaries = useMemo(() => {
-    if (!cycleFilteredData) return []
+    if (!cycleFilteredData) {
+      console.debug('No cycle filtered data available for engineer summaries')
+      return []
+    }
     
     const engineerMap = new Map()
     

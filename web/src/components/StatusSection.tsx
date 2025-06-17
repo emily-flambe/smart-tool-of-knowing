@@ -140,7 +140,7 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
   const groupedIssues = React.useMemo(() => {
     if (groupByEngineer) {
       const grouped: Record<string, LinearIssue[]> = {
-        'unassigned': []
+        'unassigned': [] // Will contain issues without assignees
       }
 
       // Initialize groups for all team members
@@ -166,9 +166,9 @@ export const StatusSection: React.FC<StatusSectionProps> = ({
 
       return grouped
     } else {
-      // Group by project and sort by estimate within each project
+      // Group by project and sort by estimate within each project  
       const grouped: Record<string, LinearIssue[]> = {
-        'no-project': []
+        'no-project': [] // Will contain issues without projects
       }
 
       // Group issues by project

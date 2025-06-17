@@ -296,7 +296,7 @@ export class UnifiedDataService {
 
   // Sync operations
   async syncAllSources(): Promise<SyncResult[]> {
-    const results: SyncResult[] = [];
+    const results: SyncResult[] = [] // Will collect sync results from all sources;
 
     for (const [source, extractor] of this.extractors) {
       results.push(await this.syncSource(source));
@@ -323,7 +323,7 @@ export class UnifiedDataService {
     let itemsProcessed = 0;
     let itemsAdded = 0;
     let itemsUpdated = 0;
-    const errors: string[] = [];
+    const errors: string[] = []; // Will collect any errors during sync
 
     try {
       // Check if we should do incremental sync
@@ -392,7 +392,7 @@ export class UnifiedDataService {
     };
 
     const result = await this.query(query);
-    const sections: NewsletterSection[] = [];
+    const sections: NewsletterSection[] = []; // Will be populated with newsletter sections
     
     // Group items based on groupBy option
     const grouped = this.groupItems(result.items, options.groupBy || 'source');
@@ -469,7 +469,7 @@ export class UnifiedDataService {
   }
 
   private groupItems(items: UnifiedContent[], groupBy: string): Record<string, UnifiedContent[]> {
-    const grouped: Record<string, UnifiedContent[]> = {};
+    const grouped: Record<string, UnifiedContent[]> = {}; // Will group items by specified criteria
 
     for (const item of items) {
       let key: string;
@@ -495,7 +495,7 @@ export class UnifiedDataService {
       }
 
       if (!grouped[key]) {
-        grouped[key] = [];
+        grouped[key] = []; // Initialize group for new key
       }
       grouped[key].push(item);
     }

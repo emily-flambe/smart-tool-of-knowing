@@ -5,6 +5,8 @@ import { OverviewCards } from '../components/OverviewCards'
 import { ErrorMessage } from '../components/ErrorMessage'
 import { TestConnectionButton } from '../components/TestConnectionButton'
 import { FetchDataButton } from '../components/FetchDataButton'
+import { SortableIssuesTable } from '../components/SortableIssuesTable'
+import { NewsletterView } from '../components/NewsletterView'
 import { useCycleReviewData } from '../hooks/useCycleReviewData'
 
 export function CycleReviewPage() {
@@ -12,6 +14,7 @@ export function CycleReviewPage() {
   const [availableCycles, setAvailableCycles] = useState<LinearCycle[]>([])
   const [isLoadingCycles, setIsLoadingCycles] = useState(true)
   const [cyclesError, setCyclesError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState<'summary' | 'newsletter'>('summary')
 
   const {
     cycleReviewData,
@@ -113,9 +116,8 @@ export function CycleReviewPage() {
     return (
       <div className="p-6">
         <ErrorMessage 
+          error={cyclesError}
           title="Failed to load cycles"
-          message={cyclesError}
-          suggestion="Check your Linear API connection and try refreshing the page."
         />
       </div>
     )
@@ -159,8 +161,7 @@ export function CycleReviewPage() {
               <CycleSelector
                 cycles={availableCycles}
                 selectedCycle={selectedCycle}
-                onCycleChange={handleCycleChange}
-                showActiveOnly={false}
+                onSelectCycle={handleCycleChange}
               />
               
               {/* Export button placeholder */}
@@ -186,9 +187,9 @@ export function CycleReviewPage() {
             {/* Overview Cards */}
             <div className="mb-8">
               <OverviewCards
-                cycleReviewData={cycleReviewData}
+                cycleReviewData={cycleReviewData || null}
                 isLoading={isLoadingReview}
-                error={reviewError}
+                error={reviewError || null}
               />
             </div>
 
@@ -196,123 +197,98 @@ export function CycleReviewPage() {
             {reviewError && (
               <div className="mb-6">
                 <ErrorMessage
+                  error={reviewError}
                   title="Failed to load cycle review data"
-                  message={reviewError}
-                  suggestion="Try selecting a different cycle or check your connection."
-                  onRetry={() => refetch()}
                 />
               </div>
             )}
 
-            {/* Tab Navigation - Placeholder for Phase 3 */}
+            {/* Tab Navigation */}
             <div className="bg-white rounded-lg shadow">
               <div className="border-b border-gray-200">
                 <nav className="-mb-px flex space-x-8 px-6">
-                  <button className="py-4 px-1 border-b-2 border-blue-500 text-blue-600 font-medium text-sm">
+                  <button 
+                    onClick={() => setActiveTab('summary')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'summary' 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
                     Summary
                   </button>
-                  <button className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                    By Project
-                  </button>
-                  <button className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                    By Engineer
-                  </button>
-                  <button className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 font-medium text-sm">
-                    Timeline
+                  <button 
+                    onClick={() => setActiveTab('newsletter')}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm ${
+                      activeTab === 'newsletter' 
+                        ? 'border-blue-500 text-blue-600' 
+                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                    }`}
+                  >
+                    Newsletter View
                   </button>
                 </nav>
               </div>
               
-              {/* Content Area - Placeholder for Phase 3 */}
+              {/* Content Area */}
               <div className="p-6">
                 {isLoadingReview ? (
                   <div className="flex items-center justify-center py-12">
                     <div className="text-lg text-gray-600">Loading cycle review data...</div>
                   </div>
                 ) : cycleReviewData ? (
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">Cycle Overview</h3>
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                          <div>
-                            <span className="text-gray-500">Cycle:</span>
-                            <div className="font-medium">{cycleReviewData.cycle?.name || 'Unnamed Cycle'}</div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Duration:</span>
-                            <div className="font-medium">
-                              {cycleReviewData.cycle ? (
-                                `${Math.ceil((new Date(cycleReviewData.cycle.completedAt).getTime() - 
-                                  new Date(cycleReviewData.cycle.startedAt).getTime()) / (1000 * 60 * 60 * 24))} days`
-                              ) : 'N/A'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Started:</span>
-                            <div className="font-medium">
-                              {cycleReviewData.cycle ? 
-                                new Date(cycleReviewData.cycle.startedAt).toLocaleDateString() : 'N/A'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="text-gray-500">Completed:</span>
-                            <div className="font-medium">
-                              {cycleReviewData.cycle ? 
-                                new Date(cycleReviewData.cycle.completedAt).toLocaleDateString() : 'N/A'}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Issues Summary */}
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
-                        Completed Issues ({cycleReviewData.stats.totalIssues})
-                      </h3>
-                      <div className="bg-white border rounded-lg">
-                        <div className="px-4 py-3 bg-gray-50 border-b rounded-t-lg">
-                          <div className="flex items-center justify-between text-sm font-medium text-gray-700">
-                            <span>Issue</span>
-                            <span>Project</span>
-                            <span>Assignee</span>
-                            <span>Points</span>
-                          </div>
-                        </div>
-                        <div className="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                          {cycleReviewData.issues.slice(0, 20).map((issue: any) => (
-                            <div key={issue.id} className="px-4 py-3 hover:bg-gray-50">
-                              <div className="flex items-center justify-between text-sm">
-                                <div className="flex-1 min-w-0">
-                                  <div className="font-medium text-gray-900 truncate">
-                                    {issue.identifier}: {issue.title}
-                                  </div>
-                                  <div className="text-gray-500 text-xs mt-1">
-                                    Completed {new Date(issue.completedAt).toLocaleDateString()}
-                                  </div>
+                  <>
+                    {activeTab === 'summary' && (
+                      <div className="space-y-6">
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-4">Cycle Overview</h3>
+                          <div className="bg-gray-50 rounded-lg p-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                              <div>
+                                <span className="text-gray-500">Cycle:</span>
+                                <div className="font-medium">{selectedCycle?.name || `Cycle ${selectedCycle?.number || 'Unknown'}`}</div>
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Duration:</span>
+                                <div className="font-medium">
+                                  {cycleReviewData.cycle ? (
+                                    `${Math.ceil((new Date(cycleReviewData.cycle.completedAt).getTime() - 
+                                      new Date(cycleReviewData.cycle.startedAt).getTime()) / (1000 * 60 * 60 * 24))} days`
+                                  ) : 'N/A'}
                                 </div>
-                                <div className="ml-4 text-gray-600 min-w-0 flex-shrink-0">
-                                  {issue.project?.name || 'No Project'}
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Started:</span>
+                                <div className="font-medium">
+                                  {cycleReviewData.cycle ? 
+                                    new Date(cycleReviewData.cycle.startedAt).toLocaleDateString() : 'N/A'}
                                 </div>
-                                <div className="ml-4 text-gray-600 min-w-0 flex-shrink-0">
-                                  {issue.assignee?.name || 'Unassigned'}
-                                </div>
-                                <div className="ml-4 text-gray-900 font-medium min-w-0 flex-shrink-0">
-                                  {issue.estimate || 0}
+                              </div>
+                              <div>
+                                <span className="text-gray-500">Completed:</span>
+                                <div className="font-medium">
+                                  {cycleReviewData.cycle ? 
+                                    new Date(cycleReviewData.cycle.completedAt).toLocaleDateString() : 'N/A'}
                                 </div>
                               </div>
                             </div>
-                          ))}
-                        </div>
-                        {cycleReviewData.issues.length > 20 && (
-                          <div className="px-4 py-3 bg-gray-50 border-t text-center text-sm text-gray-600">
-                            Showing first 20 of {cycleReviewData.issues.length} issues
                           </div>
-                        )}
+                        </div>
+
+                        {/* Issues Summary */}
+                        <div>
+                          <h3 className="text-lg font-medium text-gray-900 mb-4">
+                            Completed Issues ({cycleReviewData.stats.totalIssues})
+                          </h3>
+                          <SortableIssuesTable issues={cycleReviewData.issues} />
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
+
+                    {activeTab === 'newsletter' && (
+                      <NewsletterView issues={cycleReviewData.issues} />
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-12 text-gray-600">
                     No data available for this cycle

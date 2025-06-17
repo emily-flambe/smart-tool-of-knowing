@@ -90,12 +90,17 @@
 - Preserve existing changelog entries when making updates
 
 ## Testing and Quality Assurance
+- **ALWAYS** test new changes manually before committing to any branch
+- **ALWAYS** iteratively debug and fix issues before committing changes
+- **NEVER** commit code that hasn't been verified to work as intended
 - **ALWAYS** run tests before committing changes: `npm test`
 - **ALWAYS** run lint/typecheck before committing: Check package.json for lint commands
 - **ALWAYS** investigate and fix test failures or compilation errors before proceeding
 - If tests fail due to existing codebase issues, document the failures and work around them
 - Run specific test suites when working on focused areas: `npm test -- --testPathPattern="pattern"`
 - When creating new functionality, write corresponding tests following existing patterns
+- Start the relevant servers (API and/or web) to verify functionality works end-to-end
+- Test user-facing features in the browser to ensure they display and behave correctly
 
 ## Debugging Protocol
 - When encountering TypeScript compilation errors, read and fix them systematically
