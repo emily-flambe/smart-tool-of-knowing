@@ -956,14 +956,41 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       }
       return sum + estimate
     }, 0)
-    const totalPRs = completedIssues.reduce((sum, issue) => {
-      const linkedPRs = issue.linkedPRs
-      if (!linkedPRs || linkedPRs.length === 0) {
-        console.debug(`Issue ${issue.identifier} has no linked PRs`)
-        return sum + 0
+    // Calculate PR statistics
+    let totalPRs = 0
+    let totalAdditions = 0
+    let totalDeletions = 0
+    let totalFilesChanged = 0
+    
+    const pullRequests: any[] = []
+    const seenPRUrls = new Set<string>()
+    
+    // Collect all unique PRs and their stats
+    for (const issue of completedIssues) {
+      if (issue.linkedPRs && issue.linkedPRs.length > 0) {
+        for (const pr of issue.linkedPRs) {
+          if (!seenPRUrls.has(pr.url)) {
+            seenPRUrls.add(pr.url)
+            totalPRs++
+            
+            // Add to total statistics
+            totalAdditions += pr.additions || 0
+            totalDeletions += pr.deletions || 0
+            totalFilesChanged += pr.filesChanged || 0
+            
+            pullRequests.push({
+              ...pr,
+              linkedIssues: [issue.identifier],
+              stats: {
+                additions: pr.additions || 0,
+                deletions: pr.deletions || 0,
+                filesChanged: pr.filesChanged || 0
+              }
+            })
+          }
+        }
       }
-      return sum + linkedPRs.length
-    }, 0)
+    }
     const uniqueContributors = new Set(
       completedIssues
         .filter(issue => issue.assignee?.id)
@@ -1039,13 +1066,16 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
         totalIssues,
         totalPoints,
         totalPRs,
+        totalAdditions,
+        totalDeletions,
+        totalFilesChanged,
         uniqueContributors,
         velocity
       },
       issues: formattedIssues,
       issuesByProject,
       issuesByEngineer,
-      pullRequests: [] // Will be populated by GitHub integration
+      pullRequests
     })
 
   } catch (error: any) {
