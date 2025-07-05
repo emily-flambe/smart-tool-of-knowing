@@ -1,8 +1,26 @@
-# Linear Cycle Planning Web Interface
+# Smart Tool of Knowing - Web Interface
 
-Phase 1+ implementation of the drag-and-drop web interface for Linear cycle planning with real Linear API integration.
+A comprehensive web interface for engineering management, featuring both cycle planning tools and an engineering manager dashboard.
 
-## Features Implemented
+## Phase 2: Engineering Manager Dashboard
+
+### Features
+- **Team Dashboard**: Real-time view of each engineer's current work, completed issues, and items in review
+- **Sprint Overview**: Comprehensive sprint metrics including burndown, story points progress, and issue distribution by engineer
+- **Weekly Report Generator**: One-click generation of formatted status reports with copy/download functionality
+- **Time-based Views**: Filter team activity by Today, This Week, This Sprint, or This Month
+- **Dashboard Summary**: At-a-glance metrics showing team size, active issues, daily completions, and review queue
+
+### Key Components
+- **EngineerCard**: Individual engineer status display with current issues
+- **SprintMetrics**: Visual progress bars and statistics for sprint tracking
+- **ReportGenerator**: Automated report creation from Linear data
+- **TimeframeSelector**: Quick switching between different time horizons
+- **DashboardSummary**: High-level team metrics overview
+
+## Phase 1: Linear Cycle Planning Interface
+
+### Features Implemented
 
 ### Core Planning Interface
 - ✅ **Drag-and-Drop**: Move tickets between backlog and engineer columns
@@ -74,8 +92,14 @@ Phase 1+ implementation of the drag-and-drop web interface for Linear cycle plan
    ```
 
 4. **Visit the application**:
-   - Web interface: http://localhost:3000
+   - Web interface: http://localhost:5173 (Vite dev server)
    - API server: http://localhost:3001
+   
+### Navigation
+- **Dashboard** (`/`): Overview with summary metrics and team activity
+- **Team** (`/team`): Detailed view of all engineers and their current work
+- **Sprint** (`/sprint`): Sprint metrics, burndown, and issue distribution
+- **Reports** (`/reports`): Generate and download weekly status reports
 
 ### Production Build
 
