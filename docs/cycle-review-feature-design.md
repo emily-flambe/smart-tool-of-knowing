@@ -549,3 +549,325 @@ class GitHubIntegrationService {
 3. What level of detail should be included in the default summary view?
 4. Should we support custom date ranges beyond Linear cycles?
 5. How should we handle private repositories or issues with limited visibility?
+
+## Phase 7: AI-Powered Summary Generation
+
+### Overview
+
+Enhance the Newsletter view with intelligent summary generation to create comprehensive, human-readable summaries of cycle work. This feature will analyze Linear issue descriptions and GitHub PR details to generate narrative summaries highlighting key contributions and project outcomes.
+
+### Feature Requirements
+
+#### Cycle-Level Summary
+- **Automated Narrative**: Generate a comprehensive paragraph summarizing the cycle's overall achievements
+- **Key Metrics Integration**: Weave statistics (issues completed, story points, PRs merged) into natural language
+- **Theme Identification**: Identify major themes or focus areas across projects (e.g., "performance optimization", "bug fixes", "new features")
+- **Contributor Highlights**: Recognize engineers who made significant contributions across multiple projects
+
+#### Project-Level Summaries
+- **Project Narrative**: Generate 2-3 sentence summaries for each project's work
+- **Technical Context**: Incorporate details from PR descriptions to explain what was actually built
+- **Engineer Contributions**: Highlight individual engineers who did substantial work within each project
+- **Impact Assessment**: Derive business impact from issue descriptions and outcomes
+
+#### Engineer Recognition
+- **Contribution Scoring**: Algorithm to identify engineers who contributed significantly to projects
+- **Cross-Project Recognition**: Highlight engineers who worked across multiple projects
+- **Specialization Detection**: Identify engineers with domain expertise (frontend, backend, infrastructure)
+- **Collaboration Patterns**: Recognize pair programming or mentoring based on PR review patterns
+
+### Technical Architecture
+
+#### Data Sources and Processing
+
+**1. Linear Issue Analysis**
+```typescript
+interface IssueAnalysis {
+  issueId: string
+  title: string
+  description: string
+  businessContext: string    // Extracted from description
+  technicalScope: string     // Derived from labels/estimates
+  impactKeywords: string[]   // Performance, security, user experience, etc.
+}
+```
+
+**2. GitHub PR Analysis**
+```typescript
+interface PRAnalysis {
+  prId: string
+  title: string
+  description: string
+  technicalSummary: string   // What was actually implemented
+  codeChanges: {
+    filesChanged: number
+    additions: number
+    deletions: number
+    complexity: 'low' | 'medium' | 'high'
+  }
+  reviewContext: string      // Insights from review comments
+}
+```
+
+**3. Engineer Contribution Scoring**
+```typescript
+interface ContributionScore {
+  engineerId: string
+  name: string
+  projectContributions: {
+    projectId: string
+    score: number             // Based on points, PR complexity, reviews
+    roleType: 'lead' | 'contributor' | 'reviewer'
+    specializations: string[] // Frontend, backend, infrastructure, etc.
+  }[]
+  crossProjectImpact: number
+  mentorshipScore: number     // Based on code reviews given
+}
+```
+
+#### AI Integration Strategy
+
+**Approach 1: Local Processing (Recommended)**
+- Use local LLM (e.g., Ollama with Llama 2/3) for privacy and cost control
+- Implement prompt engineering for consistent, structured outputs
+- Process descriptions locally to avoid sending sensitive data to external APIs
+
+**Approach 2: External API Integration**
+- OpenAI GPT-4 or Claude API for higher quality summaries
+- Implement data sanitization to remove sensitive information
+- Cost management with request batching and caching
+
+**Prompt Engineering Framework**
+```typescript
+interface SummaryPrompts {
+  cycleOverview: {
+    systemPrompt: string
+    template: string
+    variables: ['cycleStats', 'projectSummaries', 'topContributors']
+  }
+  projectSummary: {
+    systemPrompt: string
+    template: string
+    variables: ['projectName', 'issues', 'prs', 'engineers', 'businessContext']
+  }
+  engineerHighlight: {
+    systemPrompt: string
+    template: string
+    variables: ['engineerName', 'contributions', 'technicalImpact', 'collaboration']
+  }
+}
+```
+
+### Implementation Phases
+
+#### Phase 7a: Data Analysis Infrastructure
+1. **Content Extraction Service**
+   - Parse Linear issue descriptions for business context and technical requirements
+   - Extract meaningful information from PR descriptions and commit messages
+   - Identify keywords and themes using text analysis
+
+2. **Contribution Analysis Engine**
+   - Calculate engineer contribution scores based on multiple factors:
+     - Story points completed
+     - PR complexity (file changes, lines modified)
+     - Code review participation
+     - Cross-project involvement
+   - Weight contributions by project importance (story point allocation)
+
+3. **Context Aggregation**
+   - Combine issue and PR data into coherent project narratives
+   - Identify technical achievements and business outcomes
+   - Map engineer activities to project goals
+
+#### Phase 7b: AI Summary Generation
+1. **Local LLM Integration**
+   - Set up Ollama or similar local LLM solution
+   - Implement prompt templates for different summary types
+   - Create feedback loop for prompt optimization
+
+2. **Summary Generation Service**
+   ```typescript
+   class SummaryGenerationService {
+     async generateCycleSummary(cycleData: CycleAnalysis): Promise<CycleSummary>
+     async generateProjectSummary(projectData: ProjectAnalysis): Promise<ProjectSummary>
+     async generateEngineerHighlights(contributions: ContributionScore[]): Promise<EngineerHighlight[]>
+   }
+   ```
+
+3. **Output Formatting**
+   - Generate markdown-formatted summaries
+   - Create HTML email templates with rich formatting
+   - Provide plain text versions for copy-paste
+
+#### Phase 7c: Newsletter View Enhancement
+1. **Summary Display Components**
+   - Expandable cycle overview section
+   - Project summary cards with engineer highlights
+   - Contributor spotlight section
+
+2. **Manual Override Capabilities**
+   - Allow manual editing of generated summaries
+   - Save custom templates for future cycles
+   - Version control for summary drafts
+
+3. **Export Enhancements**
+   - Enhanced newsletter templates with AI summaries
+   - Multiple output formats (markdown, HTML, plain text)
+   - Customizable summary length and detail level
+
+### Data Models
+
+#### Summary Data Structures
+```typescript
+interface CycleSummary {
+  id: string
+  cycleId: string
+  overview: string              // 2-3 paragraph cycle summary
+  keyAchievements: string[]     // Bullet points of major wins
+  metrics: {
+    totalIssues: number
+    totalPoints: number
+    totalPRs: number
+    participatingEngineers: number
+  }
+  themes: string[]             // Major focus areas identified
+  generatedAt: Date
+  isManuallyEdited: boolean
+}
+
+interface ProjectSummary {
+  id: string
+  projectName: string
+  overview: string             // 2-3 sentence project summary
+  technicalHighlights: string // What was actually built
+  businessImpact: string       // Why it matters
+  keyContributors: {
+    engineerId: string
+    name: string
+    role: string              // Lead, contributor, reviewer
+    highlight: string         // Specific contribution
+  }[]
+  metrics: {
+    issuesCompleted: number
+    pointsDelivered: number
+    prsSubmitted: number
+  }
+}
+
+interface EngineerHighlight {
+  engineerId: string
+  name: string
+  overallContribution: string  // Narrative of their cycle impact
+  projectRoles: {
+    projectName: string
+    role: 'lead' | 'contributor' | 'reviewer'
+    impact: string
+  }[]
+  specializations: string[]    // Technical areas of focus
+  collaborationScore: number   // How much they helped others
+}
+```
+
+### API Endpoints
+
+```typescript
+// Generate summaries for a cycle
+POST /api/cycle-review/:cycleId/generate-summaries
+{
+  includeProjectSummaries: boolean
+  includeEngineerHighlights: boolean
+  summaryLength: 'brief' | 'detailed' | 'comprehensive'
+}
+
+// Get generated summaries
+GET /api/cycle-review/:cycleId/summaries
+
+// Update manual edits
+PATCH /api/cycle-review/:cycleId/summaries/:summaryId
+{
+  content: string
+  isManuallyEdited: true
+}
+
+// Export enhanced newsletter
+GET /api/cycle-review/:cycleId/export/newsletter
+?format=markdown|html|text&includeSummaries=true
+```
+
+### Configuration Options
+
+#### Summary Generation Settings
+```typescript
+interface SummaryConfig {
+  ai: {
+    provider: 'local' | 'openai' | 'claude'
+    model: string
+    maxTokens: number
+    temperature: number
+  }
+  content: {
+    cycleOverviewLength: 'brief' | 'detailed'
+    projectSummaryLength: 'brief' | 'detailed'
+    includeEngineerHighlights: boolean
+    highlightThreshold: number    // Minimum contribution score for highlights
+  }
+  privacy: {
+    sanitizeIssueDescriptions: boolean
+    excludePrivateRepos: boolean
+    redactSensitiveKeywords: string[]
+  }
+}
+```
+
+### Privacy and Security Considerations
+
+1. **Data Handling**
+   - Option to process data locally vs. external API
+   - Sanitization of sensitive information before AI processing
+   - Audit trail of what data was sent to external services
+
+2. **Content Filtering**
+   - Configurable keyword filtering for sensitive information
+   - Option to exclude private repository data
+   - Manual review process before final summary generation
+
+3. **Access Control**
+   - Role-based access to summary generation features
+   - Approval workflow for public newsletter distribution
+   - Version control and change tracking for summaries
+
+### Success Metrics
+
+1. **Adoption and Usage**
+   - Percentage of cycles with generated summaries
+   - User satisfaction with summary quality
+   - Time saved in newsletter preparation
+
+2. **Content Quality**
+   - Manual edit frequency (lower is better)
+   - Accuracy of engineer contribution recognition
+   - Relevance of identified themes and highlights
+
+3. **Business Impact**
+   - Increased stakeholder engagement with cycle summaries
+   - Improved team recognition and morale
+   - Enhanced documentation of engineering achievements
+
+### Future Enhancements
+
+1. **Advanced AI Features**
+   - Trend analysis across multiple cycles
+   - Predictive insights for team capacity and project success
+   - Automated identification of technical debt and improvements
+
+2. **Integration Expansions**
+   - Slack/Teams integration for automatic summary posting
+   - Calendar integration for milestone and deadline context
+   - Customer feedback integration for impact validation
+
+3. **Personalization**
+   - Manager-specific views highlighting their team's contributions
+   - Engineer-specific achievement summaries for performance reviews
+   - Stakeholder-specific summaries focusing on business impact
+
+This AI-powered summary generation will transform the cycle review from a manual reporting task into an intelligent, comprehensive narrative of engineering achievements, making it easier for teams to communicate their impact and for stakeholders to understand the value delivered.

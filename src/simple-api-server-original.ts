@@ -477,6 +477,13 @@ class SimpleLinearClient {
     return data.teams.nodes
   }
 
+  // Removed planning-related update methods:
+  // - updateIssueAssignee
+  // - updateIssueEstimate 
+  // - updateIssueStatus
+  // - updateIssueCycle
+  // - updateIssueMultiple
+
   async getUsers(): Promise<any[]> {
     const query = `
       query {
@@ -622,6 +629,14 @@ if (process.env.LINEAR_API_KEY) {
 
 const app = express()
 const port = process.env.PORT || 3001
+
+// Define types for basic data
+interface BasicData {
+  lastFetched: string
+  cycles: any[]
+  issues: any[]
+  teamMembers: any[]
+}
 
 interface HealthResponse {
   status: string
@@ -1055,8 +1070,40 @@ app.get('/api/active-engineers', async (req: any, res: any) => {
     }
 
     console.log('🔄 Calling linearClient.getActiveEngineers()')
-    const activeEngineers = await linearClient.getActiveEngineers()
+    let activeEngineers = await linearClient.getActiveEngineers()
     console.log(`📊 LinearClient returned ${activeEngineers.length} engineers`)
+    
+    // TEMPORARY FALLBACK: If no active engineers found via Linear API, extract from current planning state
+    if (activeEngineers.length === 0 && planningState) {
+      console.log('🔄 Fallback: Extracting engineers from current planning state')
+      const engineerIds = new Set<string>()
+      
+      // Get engineer IDs from current assignments
+      Object.keys(planningState.currentAssignments).forEach(engineerId => {
+        if (planningState.currentAssignments[engineerId].length > 0) {
+          engineerIds.add(engineerId)
+        }
+      })
+      
+      // Also get from issues directly
+      planningState.originalData.issues.forEach(issue => {
+        if (issue.assignee?.id) {
+          engineerIds.add(issue.assignee.id)
+        }
+      })
+      
+      console.log(`🔄 Found ${engineerIds.size} engineer IDs from planning state:`, Array.from(engineerIds))
+      
+      // Create engineer objects from IDs (using email as both id and email)
+      activeEngineers = Array.from(engineerIds).map(engineerId => ({
+        id: engineerId,
+        name: engineerId.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase()),
+        email: engineerId,
+        avatarUrl: null
+      }))
+      
+      console.log(`🔄 Fallback created ${activeEngineers.length} engineers:`, activeEngineers.map(e => e.name))
+    }
     
     console.log(`✅ Active engineers endpoint returning ${activeEngineers.length} engineers`)
     
@@ -1069,6 +1116,651 @@ app.get('/api/active-engineers', async (req: any, res: any) => {
     res.status(500).json({ 
       error: 'Failed to fetch active engineers',
       message: error.message 
+    })
+  }
+})
+
+// Basic data storage
+let basicData: BasicData | null = null
+
+// Removed fetch-data endpoint - planning functionality not needed
+
+// Removed planning-state endpoint - planning functionality not needed
+
+app.post('/api/assignments', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ error: 'No planning data available. Fetch data first.' })
+  }
+
+  const { issueId, fromEngineerId, toEngineerId } = req.body
+  
+  if (!issueId) {
+    return res.status(400).json({ error: 'Missing required field: issueId' })
+  }
+
+  console.log(`🔄 Assignment update request:`, { issueId, fromEngineerId, toEngineerId })
+
+  // Find the issue in our data
+  const issue = planningState.originalData.issues.find(i => i.id === issueId)
+  if (!issue) {
+    return res.status(404).json({ error: `Issue ${issueId} not found` })
+  }
+
+  // Update the current assignments state
+  // Remove from old engineer if specified
+  if (fromEngineerId && planningState.currentAssignments[fromEngineerId]) {
+    const oldIssues = planningState.currentAssignments[fromEngineerId]
+    planningState.currentAssignments[fromEngineerId] = oldIssues.filter(id => id !== issueId)
+    console.log(`🔄 Removed issue ${issueId} from engineer ${fromEngineerId}`)
+  } else {
+    // If no fromEngineerId specified, find and remove from any current assignment
+    Object.keys(planningState.currentAssignments).forEach(engineerId => {
+      const issues = planningState.currentAssignments[engineerId]
+      if (issues.includes(issueId)) {
+        planningState.currentAssignments[engineerId] = issues.filter(id => id !== issueId)
+        console.log(`🔄 Found and removed issue ${issueId} from engineer ${engineerId}`)
+      }
+    })
+  }
+
+  // Add to new engineer if specified
+  if (toEngineerId) {
+    if (!planningState.currentAssignments[toEngineerId]) {
+      planningState.currentAssignments[toEngineerId] = []
+    }
+    // Only add if not already assigned to this engineer
+    if (!planningState.currentAssignments[toEngineerId].includes(issueId)) {
+      planningState.currentAssignments[toEngineerId].push(issueId)
+      console.log(`🔄 Added issue ${issueId} to engineer ${toEngineerId}`)
+    }
+  }
+
+  // Track the change in localChanges
+  const changeRecord = {
+    type: 'assignment' as const,
+    issueId,
+    fromEngineerId,
+    toEngineerId,
+    timestamp: new Date().toISOString()
+  }
+
+  planningState.localChanges.push(changeRecord)
+  console.log(`📝 Tracked assignment change:`, changeRecord)
+  console.log(`📝 Total local changes: ${planningState.localChanges.length}`)
+
+  res.json({ 
+    success: true,
+    message: 'Assignment updated',
+    change: changeRecord
+  })
+})
+
+app.get('/api/changes', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ error: 'No planning data available. Fetch data first.' })
+  }
+
+  const changes = planningState.localChanges.map(change => {
+    const issue = planningState!.originalData.issues.find(i => i.id === change.issueId)
+    const fromEngineer = change.fromEngineerId ? 
+      planningState!.originalData.teamMembers.find(m => m.id === change.fromEngineerId) : null
+    const toEngineer = change.toEngineerId ? 
+      planningState!.originalData.teamMembers.find(m => m.id === change.toEngineerId) : null
+
+    return {
+      ...change,
+      issue: issue ? { id: issue.id, identifier: issue.identifier, title: issue.title } : null,
+      fromEngineer: fromEngineer ? { id: fromEngineer.id, name: fromEngineer.name } : null,
+      toEngineer: toEngineer ? { id: toEngineer.id, name: toEngineer.name } : null
+    }
+  })
+
+  console.log(`📋 Changes endpoint called, returning ${changes.length} changes`)
+  console.log(`📋 Raw localChanges:`, planningState.localChanges)
+  console.log(`📋 Processed changes:`, changes)
+
+  res.json({
+    totalChanges: changes.length,
+    changes,
+    lastFetched: planningState.lastFetched
+  })
+})
+
+// Delete individual change endpoint
+app.delete('/api/changes/:changeIndex', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ error: 'No planning data available. Fetch data first.' })
+  }
+
+  const changeIndex = parseInt(req.params.changeIndex)
+  if (isNaN(changeIndex) || changeIndex < 0 || changeIndex >= planningState.localChanges.length) {
+    return res.status(400).json({ error: 'Invalid change index' })
+  }
+
+  const deletedChange = planningState.localChanges.splice(changeIndex, 1)[0]
+  
+  console.log(`🗑️ Deleting change at index ${changeIndex}:`, deletedChange)
+
+  // Reverse the change in the current assignments to rollback the UI state
+  if (deletedChange.type === 'assignment') {
+    const { issueId, fromEngineerId, toEngineerId } = deletedChange
+    
+    console.log(`🔄 Rolling back assignment change for issue ${issueId}`)
+    
+    // Remove from the "to" engineer (reverse the assignment)
+    if (toEngineerId && planningState.currentAssignments[toEngineerId]) {
+      planningState.currentAssignments[toEngineerId] = 
+        planningState.currentAssignments[toEngineerId].filter(id => id !== issueId)
+      console.log(`🔄 Removed issue ${issueId} from engineer ${toEngineerId} (rollback)`)
+    }
+    
+    // Add back to the "from" engineer (restore original assignment)
+    if (fromEngineerId) {
+      if (!planningState.currentAssignments[fromEngineerId]) {
+        planningState.currentAssignments[fromEngineerId] = []
+      }
+      if (!planningState.currentAssignments[fromEngineerId].includes(issueId)) {
+        planningState.currentAssignments[fromEngineerId].push(issueId)
+        console.log(`🔄 Restored issue ${issueId} to engineer ${fromEngineerId} (rollback)`)
+      }
+    }
+  } else if (deletedChange.type === 'estimate') {
+    // For estimate changes, we'd need to restore the original estimate
+    // This requires tracking the previous estimate value in the change record
+    console.log(`🔄 Rolling back estimate change for issue ${deletedChange.issueId}`)
+    // TODO: Implement estimate rollback when we track previous estimates
+  } else if (deletedChange.type === 'status') {
+    // For status changes, restore the original state in the issue data
+    const { issueId, previousStateId } = deletedChange
+    const issue = planningState.originalData.issues.find(i => i.id === issueId)
+    
+    if (issue && previousStateId) {
+      console.log(`🔄 Rolling back status change for issue ${issueId} to previous state ${previousStateId}`)
+      // Restore the original state in the issue object
+      issue.state = {
+        ...issue.state,
+        id: previousStateId,
+        name: previousStateId // Will need to be improved with proper state name mapping
+      }
+      console.log(`🔄 Status rollback completed for issue ${issueId}`)
+    }
+  } else if (deletedChange.type === 'cycle') {
+    // For cycle changes, track the rollback
+    const { issueId, previousCycleId } = deletedChange
+    const issue = planningState.originalData.issues.find(i => i.id === issueId)
+    
+    if (issue) {
+      console.log(`🔄 Rolling back cycle change for issue ${issueId} to previous cycle ${previousCycleId || 'none'}`)
+      // Note: For full rollback, we'd need to restore the cycle in the issue object
+      // But since we're tracking changes for commit, this logging is sufficient for now
+      console.log(`🔄 Cycle rollback tracked for issue ${issueId}`)
+    }
+  }
+  
+  console.log(`🗑️ Change deleted and rolled back. Remaining changes: ${planningState.localChanges.length}`)
+
+  res.json({
+    success: true,
+    message: 'Change deleted and rolled back',
+    deletedChange,
+    remainingChanges: planningState.localChanges.length
+  })
+})
+
+// Update status endpoint
+app.post('/api/update-status', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ 
+      success: false,
+      error: 'No planning data available. Fetch data first.' 
+    })
+  }
+
+  const { issueId, statusId } = req.body
+  
+  if (!issueId || !statusId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: issueId and statusId'
+    })
+  }
+
+  console.log(`🔄 Status update request:`, { issueId, statusId })
+
+  // Find the issue in our data
+  const issue = planningState.originalData.issues.find(i => i.id === issueId)
+  if (!issue) {
+    return res.status(404).json({
+      success: false,
+      error: `Issue ${issueId} not found`
+    })
+  }
+
+  const previousStateId = issue.state.id
+  const previousStateName = issue.state.name
+
+  console.log(`🔄 Status change from "${previousStateName}" (${previousStateId}) to "${statusId}"`)
+
+  // Update the issue state in local data to reflect the change immediately in UI
+  // We need to find the proper state name for the UI, not just use the UUID
+  console.log(`🔄 Finding state name for UUID: ${statusId}`)
+  
+  // Find the state name from all available states in our data
+  let stateName = statusId // fallback to UUID if we can't find the name
+  
+  // Look through all issues to find a state with this ID
+  for (const issueData of planningState.originalData.issues) {
+    if (issueData.state && issueData.state.id === statusId) {
+      stateName = issueData.state.name
+      console.log(`🔄 Found state name: ${stateName} for ID: ${statusId}`)
+      break
+    }
+  }
+  
+  // Update the issue with the new state for immediate UI feedback
+  issue.state = {
+    ...issue.state,
+    id: statusId,
+    name: stateName
+  }
+  console.log(`🔄 Updated local issue state for immediate UI feedback: ${stateName}`)
+
+  // Track the change in localChanges
+  const changeRecord = {
+    type: 'status' as const,
+    issueId,
+    stateId: statusId, // This should be the Linear state ID
+    previousStateId,
+    timestamp: new Date().toISOString()
+  }
+
+  planningState.localChanges.push(changeRecord)
+  console.log(`📝 Tracked status change:`, changeRecord)
+  console.log(`📝 Total local changes: ${planningState.localChanges.length}`)
+
+  res.json({ 
+    success: true,
+    message: `Updated status for ${issue.identifier}`,
+    change: changeRecord
+  })
+})
+
+// Update cycle endpoint
+app.post('/api/update-cycle', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ 
+      success: false,
+      error: 'No planning data available. Fetch data first.' 
+    })
+  }
+
+  const { issueId, cycleId } = req.body
+  
+  if (!issueId || !cycleId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: issueId and cycleId'
+    })
+  }
+
+  console.log(`🔄 Cycle update request:`, { issueId, cycleId })
+
+  // Find the issue in our data
+  const issue = planningState.originalData.issues.find(i => i.id === issueId)
+  if (!issue) {
+    return res.status(404).json({
+      success: false,
+      error: `Issue ${issueId} not found`
+    })
+  }
+
+  const previousCycleId = issue.cycle?.id || null
+  
+  // Find the target cycle to get its name
+  const targetCycle = planningState.originalData.cycles.find(c => c.id === cycleId)
+  const cycleName = targetCycle ? targetCycle.name : 'Unknown Cycle'
+
+  console.log(`🔄 Cycle change from "${previousCycleId || 'none'}" to "${cycleId}" (${cycleName})`)
+
+  // Update the issue cycle in our local state for immediate UI feedback
+  issue.cycle = {
+    id: cycleId,
+    name: cycleName,
+    number: targetCycle?.number || 0
+  }
+  console.log(`🔄 Updated local issue cycle for immediate UI feedback: ${cycleName}`)
+
+  // Track the change in localChanges
+  const changeRecord = {
+    type: 'cycle' as const,
+    issueId,
+    cycleId,
+    previousCycleId,
+    timestamp: new Date().toISOString()
+  }
+
+  planningState.localChanges.push(changeRecord)
+  console.log(`📝 Tracked cycle change:`, changeRecord)
+  console.log(`📝 Total local changes: ${planningState.localChanges.length}`)
+
+  res.json({ 
+    success: true,
+    message: `Updated cycle for ${issue.identifier} to ${cycleName}`,
+    change: changeRecord
+  })
+})
+
+app.post('/api/reset', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ error: 'No planning data available. Fetch data first.' })
+  }
+  res.json({ message: 'State reset' })
+})
+
+// Update estimate endpoint
+app.post('/api/update-estimate', (req: any, res: any) => {
+  if (!planningState) {
+    return res.status(404).json({ 
+      success: false,
+      error: 'No planning data available. Fetch data first.' 
+    })
+  }
+
+  const { issueId, estimate } = req.body
+  
+  if (!issueId || estimate === undefined) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: issueId and estimate'
+    })
+  }
+
+  // Find the issue in our data
+  const issue = planningState.originalData.issues.find(i => i.id === issueId)
+  if (!issue) {
+    return res.status(404).json({
+      success: false,
+      error: `Issue ${issueId} not found`
+    })
+  }
+
+  const previousEstimate = issue.estimate
+  
+  // Record the change
+  const change = {
+    type: 'estimate',
+    issueId,
+    estimate: Number(estimate),
+    previousEstimate,
+    timestamp: new Date().toISOString()
+  }
+
+  // Update the issue estimate in our local state
+  issue.estimate = Number(estimate)
+
+  // Add to local changes
+  planningState.localChanges.push(change)
+
+  console.log(`📝 Updated estimate for ${issue.identifier}: ${previousEstimate} → ${estimate}`)
+  console.log(`📝 Total local changes now: ${planningState.localChanges.length}`)
+  console.log(`📝 Latest change:`, change)
+  console.log(`📝 All changes:`, planningState.localChanges)
+
+  res.json({
+    success: true,
+    message: `Updated estimate for ${issue.identifier}`,
+    change
+  })
+})
+
+// Commit changes to Linear
+app.post('/api/commit-changes', async (req: any, res: any) => {
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    if (!planningState) {
+      return res.status(404).json({
+        success: false,
+        error: 'No planning data available',
+        message: 'Fetch data first before committing changes'
+      })
+    }
+
+    const { changes } = req.body
+    if (!changes || !Array.isArray(changes)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid request',
+        message: 'Changes array is required'
+      })
+    }
+
+    console.log(`🚀 Committing ${changes.length} changes to Linear...`)
+
+    const results = []
+    for (const change of changes) {
+      try {
+        console.log(`📝 Processing change: ${change.description}`)
+        
+        // Get the issue from the change
+        const issue = planningState.originalData.issues.find(
+          (i: any) => i.identifier === change.issueIdentifier || i.id === change.issueId
+        )
+        
+        if (!issue) {
+          results.push({
+            id: change.id,
+            success: false,
+            error: `Issue ${change.issueIdentifier || change.issueId} not found`
+          })
+          continue
+        }
+
+        if (change.type === 'assignment') {
+          console.log(`🔄 Updating assignment for ${change.issueIdentifier}`)
+          
+          // Find the Linear user ID from email
+          let linearUserId = null
+          if (change.toAssignee) {
+            // Map assignee name to email, then email to Linear user ID
+            const teamMember = planningState.originalData.teamMembers?.find(
+              (member: any) => member.name === change.toAssignee
+            )
+            if (teamMember) {
+              // TODO: Add users back to originalData if needed for ID mapping
+              const linearUser = users.find(
+                (user: any) => user.email === teamMember.email
+              )
+              if (linearUser) {
+                linearUserId = linearUser.id
+              }
+            }
+          }
+          
+          try {
+            // Make the actual Linear API call
+            const updateResult = await linearClient.updateIssueAssignee(issue.id, linearUserId)
+            
+            results.push({
+              id: change.id,
+              success: true,
+              message: `Successfully updated assignment for ${change.issueIdentifier}`,
+              linearResponse: updateResult
+            })
+            
+            console.log(`✅ Successfully committed change: ${change.description}`)
+          } catch (linearError: any) {
+            console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Linear API error: ${linearError.message}`
+            })
+          }
+        } else if (change.type === 'estimate') {
+          console.log(`🔢 Updating estimate for ${change.issueIdentifier}`)
+          
+          try {
+            const updateResult = await linearClient.updateIssueEstimate(issue.id, change.estimate)
+            
+            results.push({
+              id: change.id,
+              success: true,
+              message: `Successfully updated estimate for ${change.issueIdentifier}`,
+              linearResponse: updateResult
+            })
+            
+            console.log(`✅ Successfully committed change: ${change.description}`)
+          } catch (linearError: any) {
+            console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Linear API error: ${linearError.message}`
+            })
+          }
+        } else if (change.type === 'status') {
+          console.log(`📊 Updating status for ${change.issueIdentifier}`)
+          console.log(`📊 Status change details:`, {
+            issueId: issue.id,
+            stateId: change.stateId,
+            changeObject: change
+          })
+          
+          if (!change.stateId) {
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Missing stateId in change object`
+            })
+            continue
+          }
+          
+          try {
+            console.log(`📊 Calling Linear API with issueId: ${issue.id}, stateId: ${change.stateId}`)
+            const updateResult = await linearClient.updateIssueStatus(issue.id, change.stateId)
+            
+            results.push({
+              id: change.id,
+              success: true,
+              message: `Successfully updated status for ${change.issueIdentifier}`,
+              linearResponse: updateResult
+            })
+            
+            console.log(`✅ Successfully committed change: ${change.description}`)
+          } catch (linearError: any) {
+            console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Linear API error: ${linearError.message}`
+            })
+          }
+        } else if (change.type === 'cycle') {
+          console.log(`🔄 Updating cycle for ${change.issueIdentifier}`)
+          
+          try {
+            const updateResult = await linearClient.updateIssueCycle(issue.id, change.cycleId)
+            
+            results.push({
+              id: change.id,
+              success: true,
+              message: `Successfully updated cycle for ${change.issueIdentifier}`,
+              linearResponse: updateResult
+            })
+            
+            console.log(`✅ Successfully committed change: ${change.description}`)
+          } catch (linearError: any) {
+            console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Linear API error: ${linearError.message}`
+            })
+          }
+        } else if (change.type === 'multiple') {
+          console.log(`🔧 Updating multiple fields for ${change.issueIdentifier}`)
+          
+          // Build updates object
+          const updates: any = {}
+          
+          if (change.assigneeId !== undefined) {
+            updates.assigneeId = change.assigneeId
+          }
+          if (change.stateId) {
+            updates.stateId = change.stateId
+          }
+          if (change.cycleId !== undefined) {
+            updates.cycleId = change.cycleId
+          }
+          if (change.estimate !== undefined) {
+            updates.estimate = change.estimate
+          }
+          
+          try {
+            const updateResult = await linearClient.updateIssueMultiple(issue.id, updates)
+            
+            results.push({
+              id: change.id,
+              success: true,
+              message: `Successfully updated multiple fields for ${change.issueIdentifier}`,
+              linearResponse: updateResult
+            })
+            
+            console.log(`✅ Successfully committed change: ${change.description}`)
+          } catch (linearError: any) {
+            console.error(`❌ Linear API error for ${change.issueIdentifier}:`, linearError.message)
+            results.push({
+              id: change.id,
+              success: false,
+              error: `Linear API error: ${linearError.message}`
+            })
+          }
+        } else {
+          results.push({
+            id: change.id,
+            success: false,
+            error: `Unknown change type: ${change.type}`
+          })
+        }
+      } catch (error: any) {
+        console.error(`❌ Failed to commit change ${change.id}:`, error)
+        results.push({
+          id: change.id,
+          success: false,
+          error: error.message
+        })
+      }
+    }
+
+    const successCount = results.filter(r => r.success).length
+    const failureCount = results.filter(r => !r.success).length
+
+    console.log(`📊 Commit summary: ${successCount} successful, ${failureCount} failed`)
+
+    res.json({
+      success: true,
+      message: `Committed ${successCount} of ${changes.length} changes successfully`,
+      results,
+      summary: {
+        total: changes.length,
+        successful: successCount,
+        failed: failureCount
+      }
+    })
+  } catch (error: any) {
+    console.error('❌ Failed to commit changes:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to commit changes',
+      message: error.message,
+      details: error.stack
     })
   }
 })
@@ -1371,7 +2063,7 @@ function hasInterestingTitle(title: string): boolean {
 }
 
 app.listen(port, () => {
-  console.log(`🚀 Smart Tool of Knowing API server running on port ${port}`)
+  console.log(`🚀 Planning API server running on port ${port}`)
   console.log(`📡 API endpoints available at http://localhost:${port}/api/*`)
 })
 

@@ -4,7 +4,6 @@ import ora from 'ora';
 import { table } from 'table';
 import { configManager } from '../config.js';
 import { LinearClient } from '../linear-client.js';
-import { CodaClient } from '../coda-client.js';
 import { AIService } from '../ai-service.js';
 
 interface HealthCheckResult {
@@ -30,8 +29,6 @@ export function createHealthCommand(): Command {
       // Check Linear API
       await checkLinearHealth(results);
 
-      // Check Coda API
-      await checkCodaHealth(results);
 
       // Check AI providers
       await checkAIProvidersHealth(results);
@@ -78,49 +75,6 @@ async function checkLinearHealth(results: HealthCheckResult[]): Promise<void> {
     spinner.stop();
     results.push({
       service: 'Linear API',
-      status: 'unhealthy',
-      message: error.message || 'Connection failed',
-      responseTime,
-      details: error.response?.status ? `HTTP ${error.response.status}` : undefined
-    });
-  }
-}
-
-async function checkCodaHealth(results: HealthCheckResult[]): Promise<void> {
-  const spinner = ora('Checking Coda API...').start();
-  const startTime = Date.now();
-
-  try {
-    const codaApiKey = configManager.getCodaApiKey();
-    
-    if (!codaApiKey) {
-      spinner.stop();
-      results.push({
-        service: 'Coda API',
-        status: 'not_configured',
-        message: 'API key not configured'
-      });
-      return;
-    }
-
-    const codaClient = new CodaClient(codaApiKey);
-    const response = await codaClient.validateApiKey();
-    const responseTime = Date.now() - startTime;
-    
-    spinner.stop();
-    results.push({
-      service: 'Coda API',
-      status: 'healthy',
-      message: `Connected as ${response.name}`,
-      responseTime,
-      details: `Email: ${response.loginId}, Type: ${response.type}`
-    });
-
-  } catch (error: any) {
-    const responseTime = Date.now() - startTime;
-    spinner.stop();
-    results.push({
-      service: 'Coda API',
       status: 'unhealthy',
       message: error.message || 'Connection failed',
       responseTime,

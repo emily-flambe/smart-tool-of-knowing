@@ -2,7 +2,6 @@ import { Command } from 'commander';
 import { UnifiedDataService } from '../unified-data-service.js';
 import { LinearExtractor } from '../extractors/linear-extractor.js';
 import { GitHubExtractor } from '../extractors/github-extractor.js';
-import { CodaExtractor } from '../extractors/coda-extractor.js';
 import { DataQuery, NewsletterOptions } from '../unified-types.js';
 import { loadConfig } from '../config.js';
 import chalk from 'chalk';
@@ -16,7 +15,7 @@ export function createUnifiedCommand(): Command {
   unifiedCmd
     .command('sync')
     .description('Sync data from all configured sources')
-    .option('--source <source>', 'Sync specific source only (coda, linear, github)')
+    .option('--source <source>', 'Sync specific source only (linear, github)')
     .option('--incremental', 'Perform incremental sync if supported')
     .action(async (options) => {
       const spinner = ora('Initializing unified data service...').start();
@@ -26,11 +25,6 @@ export function createUnifiedCommand(): Command {
         const dataService = new UnifiedDataService();
         
         // Register extractors based on configuration
-        if (config.coda?.dataDirectory) {
-          const codaExtractor = new CodaExtractor(config.coda.dataDirectory);
-          dataService.registerExtractor(codaExtractor);
-          spinner.text = 'Registered Coda extractor';
-        }
         
         if (config.linear?.apiToken) {
           const linearExtractor = new LinearExtractor(config.linear.apiToken);
@@ -91,7 +85,7 @@ export function createUnifiedCommand(): Command {
     .command('query')
     .description('Query unified data across all sources')
     .option('-q, --search <text>', 'Full-text search query')
-    .option('-s, --sources <sources>', 'Comma-separated list of sources (coda,linear,github)')
+    .option('-s, --sources <sources>', 'Comma-separated list of sources (linear,github)')
     .option('-t, --types <types>', 'Comma-separated list of content types')
     .option('--since <date>', 'Items created/updated since date (YYYY-MM-DD)')
     .option('--until <date>', 'Items created/updated until date (YYYY-MM-DD)')
@@ -304,16 +298,6 @@ export function createUnifiedCommand(): Command {
         
         // Check configured sources
         const sources = [];
-        
-        if (config.coda?.dataDirectory) {
-          const codaExtractor = new CodaExtractor(config.coda.dataDirectory);
-          const isValid = await codaExtractor.validateConnection();
-          sources.push({
-            name: 'Coda',
-            status: isValid ? 'Connected' : 'Error',
-            config: `Data directory: ${config.coda.dataDirectory}`
-          });
-        }
         
         if (config.linear?.apiToken) {
           const linearExtractor = new LinearExtractor(config.linear.apiToken);

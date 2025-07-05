@@ -64,52 +64,6 @@ describe('Core Backend Integration Tests', () => {
     })
   })
 
-  describe('Coda Data Integration', () => {
-    const codaDataPath = path.resolve(__dirname, '../../../data/coda')
-
-    it('should have accessible Coda data directory', () => {
-      expect(fs.existsSync(codaDataPath)).toBe(true)
-      
-      const stats = fs.statSync(codaDataPath)
-      expect(stats.isDirectory()).toBe(true)
-    })
-
-    it('should contain processable markdown files', () => {
-      if (fs.existsSync(codaDataPath)) {
-        const files = fs.readdirSync(codaDataPath)
-        const markdownFiles = files.filter(file => file.endsWith('.md'))
-        
-        expect(markdownFiles.length).toBeGreaterThan(0)
-        
-        // Test that we can read files without errors
-        const testFile = markdownFiles[0]
-        const filePath = path.join(codaDataPath, testFile)
-        
-        expect(() => {
-          const content = fs.readFileSync(filePath, 'utf-8')
-          expect(content.length).toBeGreaterThan(0)
-        }).not.toThrow()
-      }
-    })
-
-    it('should support content categorization', () => {
-      if (fs.existsSync(codaDataPath)) {
-        const files = fs.readdirSync(codaDataPath)
-        
-        // Should be able to categorize files by type
-        const categories = {
-          incident: files.filter(f => f.includes('incident')),
-          setup: files.filter(f => f.includes('setup')),
-          process: files.filter(f => f.includes('process')),
-          onboarding: files.filter(f => f.includes('onboarding'))
-        }
-        
-        // At least some files should be categorizable
-        const totalCategorized = Object.values(categories).reduce((sum, cat) => sum + cat.length, 0)
-        expect(totalCategorized).toBeGreaterThan(0)
-      }
-    })
-  })
 
   describe('Test Infrastructure', () => {
     it('should have working Jest configuration', () => {
@@ -164,18 +118,18 @@ describe('Core Backend Integration Tests', () => {
 
   describe('Performance and Scalability', () => {
     it('should handle file system operations efficiently', () => {
-      const codaDataPath = path.resolve(__dirname, '../../../data/coda')
+      const srcPath = path.resolve(__dirname, '../../')
       
-      if (fs.existsSync(codaDataPath)) {
+      if (fs.existsSync(srcPath)) {
         const startTime = Date.now()
         
         // Simulate processing multiple files
-        const files = fs.readdirSync(codaDataPath)
-        const markdownFiles = files.filter(f => f.endsWith('.md')).slice(0, 10)
+        const files = fs.readdirSync(srcPath)
+        const tsFiles = files.filter(f => f.endsWith('.ts')).slice(0, 10)
         
         let totalSize = 0
-        markdownFiles.forEach(file => {
-          const filePath = path.join(codaDataPath, file)
+        tsFiles.forEach(file => {
+          const filePath = path.join(srcPath, file)
           const stats = fs.statSync(filePath)
           totalSize += stats.size
         })

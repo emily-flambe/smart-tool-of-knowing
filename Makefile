@@ -1,50 +1,46 @@
-# Linear Cycle Planning Development Makefile
+# Smart Tool of Knowing Development Makefile
 
-.PHONY: help install dev api web build clean setup status stop
+.PHONY: help install dev api build clean setup status stop
 
 # Default target
 help:
-	@echo "🚀 Linear Cycle Planning Development Commands"
+	@echo "🚀 Smart Tool of Knowing Development Commands"
 	@echo ""
 	@echo "Setup:"
 	@echo "  make install    Install all dependencies"
 	@echo "  make setup      Configure Linear API (runs 'team setup')"
 	@echo ""
 	@echo "Development:"
-	@echo "  make dev        Start both API server and web interface"
+	@echo "  make dev        Start API server (port 3001)"
 	@echo "  make api        Start only the API server (port 3001)"
-	@echo "  make web        Start only the web interface (port 3000)"
 	@echo ""
 	@echo "Building:"
-	@echo "  make build      Build both backend and frontend for production"
+	@echo "  make build      Build backend for production"
 	@echo ""
 	@echo "Utilities:"
-	@echo "  make status     Check if servers are running"
-	@echo "  make stop       Stop all development servers"
+	@echo "  make status     Check if API server is running"
+	@echo "  make stop       Stop API server"
 	@echo "  make clean      Clean build artifacts and node_modules"
 
 # Install all dependencies
 install:
 	@echo "📦 Installing backend dependencies..."
 	npm install
-	@echo "📦 Installing frontend dependencies..."
-	cd web && npm install
 	@echo "✅ All dependencies installed!"
 
 # Setup Linear configuration
 setup:
 	@echo "⚙️  Setting up Linear API configuration..."
-	npm run dev -- setup
+	npm run start -- config setup
 	@echo "✅ Linear setup complete!"
 
-# Start both servers
+# Start API server
 dev:
 	@echo "🚀 Starting development environment..."
 	@echo "   📡 API Server:    http://localhost:3001"
-	@echo "   🌐 Web Interface: http://localhost:3000"
 	@echo ""
-	@echo "Press Ctrl+C to stop all servers"
-	@./start-dev.sh
+	@echo "Press Ctrl+C to stop the server"
+	npm run api-server
 
 # Start only API server
 api:
@@ -54,19 +50,10 @@ api:
 	@echo ""
 	npm run api-server
 
-# Start only web interface
-web:
-	@echo "🌐 Starting web interface on port 3000..."
-	@echo "   Web Interface: http://localhost:3000"
-	@echo ""
-	npm run web
-
 # Build for production
 build:
 	@echo "🔨 Building backend..."
 	npm run build
-	@echo "🔨 Building frontend..."
-	npm run web:build
 	@echo "✅ Build complete!"
 
 # Check server status
@@ -77,28 +64,20 @@ status:
 	else \
 		echo "   ❌ API Server (3001):    STOPPED"; \
 	fi
-	@if nc -z localhost 3000 2>/dev/null; then \
-		echo "   ✅ Web Interface (3000): RUNNING"; \
-	else \
-		echo "   ❌ Web Interface (3000): STOPPED"; \
-	fi
 
-# Stop all servers
+# Stop API server
 stop:
-	@echo "🛑 Stopping all development servers..."
+	@echo "🛑 Stopping API server..."
 	@pkill -f "api-server" 2>/dev/null || echo "   API server was not running"
-	@pkill -f "vite.*web" 2>/dev/null || echo "   Web server was not running"
 	@pkill -f "ts-node.*api-server" 2>/dev/null || true
-	@echo "✅ All servers stopped"
+	@echo "✅ API server stopped"
 
 # Clean everything
 clean:
 	@echo "🧹 Cleaning build artifacts..."
 	rm -rf dist/
-	rm -rf web/dist/
 	@echo "🧹 Cleaning node_modules..."
 	rm -rf node_modules/
-	rm -rf web/node_modules/
 	@echo "✅ Cleanup complete!"
 
 # Quick development setup for new developers
@@ -113,11 +92,6 @@ check:
 		echo "   ✅ Backend dependencies installed"; \
 	else \
 		echo "   ❌ Backend dependencies missing (run: make install)"; \
-	fi
-	@if [ -d "web/node_modules" ]; then \
-		echo "   ✅ Frontend dependencies installed"; \
-	else \
-		echo "   ❌ Frontend dependencies missing (run: make install)"; \
 	fi
 	@echo ""
 	@echo "Configuration:"

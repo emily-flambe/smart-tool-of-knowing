@@ -1,8 +1,6 @@
-export type DataSource = 'coda' | 'linear' | 'github';
+export type DataSource = 'linear' | 'github';
 
 export type ContentType = 
-  // Coda types
-  | 'coda-document' | 'coda-page' | 'coda-canvas' | 'coda-table'
   // Linear types  
   | 'linear-issue' | 'linear-project' | 'linear-cycle' | 'linear-team'
   // GitHub types
@@ -63,21 +61,6 @@ export interface UnifiedContent {
 }
 
 // Specialized interfaces for different content types
-export interface CodaContent extends UnifiedContent {
-  metadata: UnifiedMetadata & {
-    source: 'coda';
-    contentType: 'coda-document' | 'coda-page' | 'coda-canvas' | 'coda-table';
-    sourceMetadata: {
-      docId: string;
-      docName: string;
-      pageId: string;
-      isSubpage: boolean;
-      parentPageId?: string;
-      parentPageName?: string;
-    };
-  };
-}
-
 export interface LinearContent extends UnifiedContent {
   metadata: UnifiedMetadata & {
     source: 'linear';

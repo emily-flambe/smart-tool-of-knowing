@@ -5,7 +5,6 @@ import ora from 'ora';
 import { configManager } from '../config.js';
 import { LinearClient } from '../linear-client.js';
 import { AIService } from '../ai-service.js';
-import { CodaClient } from '../coda-client.js';
 import { EnvManager } from '../env-manager.js';
 
 export function createSetupCommand(): Command {
@@ -141,101 +140,6 @@ export function createSetupCommand(): Command {
         defaultProvider = aiProvider;
       }
 
-      // Optional Coda integration
-      let codaKey = existingValues.CODA_API_KEY;
-      const { setupCoda } = await inquirer.prompt([
-        {
-          type: 'confirm',
-          name: 'setupCoda',
-          message: `Set up Coda integration? ${codaKey ? `(current: ${envManager.maskValue(codaKey)})` : '(optional)'}`,
-          default: !!codaKey,
-        },
-      ]);
-
-      if (setupCoda) {
-        const response = await inquirer.prompt([
-          {
-            type: 'input',
-            name: 'codaKey',
-            message: `Coda API key ${codaKey ? `(current: ${envManager.maskValue(codaKey)})` : ''}:`,
-            default: codaKey || '',
-            validate: (input: string) => {
-              if (!input.trim()) return 'Coda API key is required';
-              if (!envManager.validateApiKey(input, 'coda')) {
-                return 'Invalid Coda API key format';
-              }
-              return true;
-            },
-          },
-        ]);
-
-        try {
-          const spinner = ora('Validating Coda API key...').start();
-          const codaClient = new CodaClient(response.codaKey);
-          const user = await codaClient.validateApiKey();
-          spinner.stop();
-          console.log(chalk.green(`✓ Coda API key validated for ${user.name}`));
-          codaKey = response.codaKey;
-
-          // Document selection
-          const { selectDocument } = await inquirer.prompt([
-            {
-              type: 'confirm',
-              name: 'selectDocument',
-              message: 'Would you like to select a default document to focus on for AI queries?',
-              default: true,
-            },
-          ]);
-
-          if (selectDocument) {
-            try {
-              const docsSpinner = ora('Fetching your Coda documents...').start();
-              const docsResponse = await codaClient.listDocs(50);
-              docsSpinner.stop();
-
-              if (docsResponse.items.length === 0) {
-                console.log(chalk.yellow('No documents found in your Coda workspace.'));
-              } else {
-                const choices: Array<{name: string, value: any, short: string}> = docsResponse.items.map(doc => ({
-                  name: `${doc.name} (${doc.workspace.name}) - Updated: ${new Date(doc.updatedAt).toLocaleDateString()}`,
-                  value: doc,
-                  short: doc.name
-                }));
-
-                choices.push({
-                  name: 'Search all documents (no default)',
-                  value: 'no-default',
-                  short: 'No default'
-                });
-
-                const { selectedDoc } = await inquirer.prompt([
-                  {
-                    type: 'list',
-                    name: 'selectedDoc',
-                    message: 'Select a default document for AI queries:',
-                    choices,
-                    pageSize: 10,
-                  },
-                ]);
-
-                if (selectedDoc !== 'no-default') {
-                  configManager.setDefaultCodaDocId(selectedDoc.id);
-                  configManager.setDefaultCodaDocName(selectedDoc.name);
-                  console.log(chalk.green(`✓ Default document set to "${selectedDoc.name}"`));
-                } else {
-                  console.log(chalk.blue('✓ No default document selected - will search all documents'));
-                }
-              }
-            } catch (error) {
-              console.log(chalk.yellow('Could not fetch documents for selection - continuing setup'));
-            }
-          }
-        } catch (error) {
-          console.log(chalk.red('✗ Invalid Coda API key - saving anyway for troubleshooting'));
-          console.log(chalk.yellow('You can test connectivity with: team config check'));
-          codaKey = response.codaKey; // Save even if validation fails
-        }
-      }
 
       // Write all values to .env file
       try {
@@ -245,7 +149,6 @@ export function createSetupCommand(): Command {
 
         if (openaiKey) envValues.OPENAI_API_KEY = openaiKey;
         if (anthropicKey) envValues.ANTHROPIC_API_KEY = anthropicKey;
-        if (codaKey) envValues.CODA_API_KEY = codaKey;
         if (defaultProvider) envValues.DEFAULT_AI_PROVIDER = defaultProvider;
 
 
@@ -263,9 +166,6 @@ export function createSetupCommand(): Command {
       console.log(chalk.blue('  team config check               ') + '- Check API connectivity');
       console.log(chalk.blue('  team linear list cycles         ') + '- List current cycles');
       console.log(chalk.blue('  team linear list issues         ') + '- List recent issues');
-      if (codaKey) {
-        console.log(chalk.blue('  team coda list-docs             ') + '- Browse Coda documents');
-      }
       if (openaiKey || anthropicKey) {
         console.log(chalk.blue('  team linear summarize cycle     ') + '- AI summary of cycle');
       }

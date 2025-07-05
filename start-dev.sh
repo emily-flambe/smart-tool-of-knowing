@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Development startup script for Linear Planning UI
+# Development startup script for Smart Tool of Knowing
 
-echo "🚀 Starting Linear Planning Development Environment"
+echo "🚀 Starting Smart Tool of Knowing Development Environment"
 echo ""
 
 # Check if Linear is configured
@@ -16,51 +16,33 @@ check_port() {
     nc -z localhost $1 2>/dev/null
 }
 
-# Start API server in background
+# Start API server
 echo "📡 Starting API server on port 3001..."
 if check_port 3001; then
     echo "   Port 3001 already in use - API server may already be running"
+    echo "   📡 API Server:    http://localhost:3001"
 else
     npm run api-server &
     API_PID=$!
     echo "   API server started (PID: $API_PID)"
+    echo ""
+    echo "✅ API server started!"
+    echo ""
+    echo "   📡 API Server:    http://localhost:3001"
+    echo ""
+    echo "Press Ctrl+C to stop the server"
 fi
-
-# Wait a moment for API server to start
-sleep 2
-
-# Start web development server
-echo "🌐 Starting web interface on port 3000..."
-if check_port 3000; then
-    echo "   Port 3000 already in use - web server may already be running"
-else
-    npm run web &
-    WEB_PID=$!
-    echo "   Web interface started (PID: $WEB_PID)"
-fi
-
-echo ""
-echo "✅ Development servers started!"
-echo ""
-echo "   🌐 Web Interface: http://localhost:3000"
-echo "   📡 API Server:    http://localhost:3001"
-echo ""
-echo "Press Ctrl+C to stop all servers"
 
 # Function to cleanup on exit
 cleanup() {
     echo ""
-    echo "🛑 Stopping servers..."
+    echo "🛑 Stopping server..."
     if [ ! -z "$API_PID" ]; then
         kill $API_PID 2>/dev/null
     fi
-    if [ ! -z "$WEB_PID" ]; then
-        kill $WEB_PID 2>/dev/null
-    fi
     # Kill any remaining processes
     pkill -f "api-server"
-    pkill -f "vite.*web"
-    echo "   Servers stopped"
+    echo "   Server stopped"
     exit 0
 }
 
