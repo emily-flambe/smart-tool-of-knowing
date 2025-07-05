@@ -2,6 +2,7 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import fetch from 'node-fetch'
+import { format } from 'date-fns'
 
 dotenv.config()
 
@@ -397,6 +398,44 @@ class SimpleLinearClient {
     return issues
   }
 
+  async getRecentIssues(limit: number = 100): Promise<any[]> {
+    const query = `
+      query($limit: Int!) {
+        issues(first: $limit, orderBy: updatedAt) {
+          nodes {
+            id
+            identifier
+            title
+            description
+            url
+            state {
+              name
+            }
+            assignee {
+              name
+              email
+            }
+            project {
+              name
+              color
+            }
+            estimate
+            completedAt
+            linkedPRs: attachments {
+              id
+              title
+              subtitle
+              url
+            }
+          }
+        }
+      }
+    `
+    
+    const result = await this.query(query, { limit })
+    return result.issues.nodes
+  }
+
   async testSingleIssueAttachments(issueId: string): Promise<any> {
     const query = `
       query($issueId: String!) {
@@ -654,7 +693,8 @@ app.get('/api/', (req: any, res: any) => {
       backlog: '/api/backlog',
       teamMembers: '/api/team-members',
       activeEngineers: '/api/active-engineers',
-      newsletter: 'POST /api/newsletter/generate'
+      newsletter: 'GET /api/newsletter/generate (with optional ?startDate=&endDate=)',
+      newsletterLegacy: 'POST /api/newsletter/generate (deprecated)'
     },
     timestamp: new Date().toISOString()
   })
@@ -1369,6 +1409,142 @@ function hasInterestingTitle(title: string): boolean {
          title.length > 40 || // Longer titles tend to be more descriptive
          title.includes('API') || title.includes('UI')
 }
+
+// Enhanced newsletter generation with date range support
+app.get('/api/newsletter/generate', async (req: express.Request, res: express.Response) => {
+  console.log('📰 Newsletter generation request received (GET with date range)')
+  
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    // Get date range from query parameters
+    const { startDate, endDate } = req.query
+    let start: Date, end: Date
+
+    if (startDate && endDate) {
+      start = new Date(startDate as string)
+      end = new Date(endDate as string)
+      console.log(`📅 Using custom date range: ${start.toISOString()} to ${end.toISOString()}`)
+    } else {
+      // Default to most recent completed cycle
+      const cycles = await linearClient.getRecentCycles(6)
+      const completedCycles = cycles.filter(cycle => cycle.status === 'completed')
+        .sort((a, b) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime())
+      
+      if (completedCycles.length === 0) {
+        return res.status(404).json({
+          success: false,
+          error: 'No completed cycles found',
+          message: 'No completed cycles available for newsletter generation'
+        })
+      }
+
+      const latestCycle = completedCycles[0]
+      start = new Date(latestCycle.startsAt)
+      end = new Date(latestCycle.endsAt)
+      console.log(`📊 Using latest cycle: ${latestCycle.name}`)
+    }
+
+    // Get all issues completed within the date range
+    const allIssues = await linearClient.getRecentIssues(200) // Get recent 200 issues
+    const completedIssues = allIssues.filter((issue: any) => {
+      if (!issue.completedAt) return false
+      const completedDate = new Date(issue.completedAt)
+      return completedDate >= start && completedDate <= end && 
+             (issue.state?.name === 'Done' || issue.state?.name === 'Completed')
+    })
+
+    console.log(`📋 Found ${completedIssues.length} completed issues in date range`)
+
+    // Get GitHub stats (mock for now)
+    const githubStats = {
+      totalPRs: Math.floor(Math.random() * 20) + 5,
+      totalCommits: Math.floor(Math.random() * 100) + 20
+    }
+
+    // Generate summaries
+    let cycleSummary = null
+    let projectSummaries: any[] = []
+    try {
+      const cycleInfo = {
+        name: `${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`,
+        startsAt: start.toISOString(),
+        endsAt: end.toISOString()
+      }
+      cycleSummary = generateCycleSummary(completedIssues, cycleInfo)
+      
+      // Generate project summaries with additional metadata
+      const projectGroups = completedIssues.reduce((acc: Record<string, any[]>, issue: any) => {
+        const projectName = issue.project?.name || 'No Project'
+        if (!acc[projectName]) {
+          acc[projectName] = []
+        }
+        acc[projectName].push(issue)
+        return acc
+      }, {} as Record<string, any[]>)
+
+      projectSummaries = Object.entries(projectGroups).map(([projectName, issues]) => {
+        const summaryText = generateProjectSummaries(issues as any[])[projectName] || ''
+        const contributors = Array.from(new Set(
+          (issues as any[]).map((issue: any) => issue.assignee?.name).filter(Boolean)
+        ))
+        
+        return {
+          projectName,
+          issueCount: issues.length,
+          summary: summaryText,
+          contributors
+        }
+      })
+    } catch (error) {
+      console.warn('⚠️ Summary generation failed:', error)
+    }
+
+    const newsletterData = {
+      completedIssues: completedIssues.map(issue => ({
+        id: issue.id,
+        identifier: issue.identifier,
+        title: issue.title,
+        description: issue.description || '',
+        url: issue.url,
+        assignee: issue.assignee ? { name: issue.assignee.name } : null,
+        project: issue.project ? {
+          name: issue.project.name,
+          color: issue.project.color
+        } : null,
+        estimate: issue.estimate || 0,
+        linkedPRs: issue.linkedPRs || []
+      })),
+      cycle: {
+        name: `Report: ${format(start, 'MMM d')} - ${format(end, 'MMM d, yyyy')}`,
+        startsAt: start.toISOString(),
+        endsAt: end.toISOString()
+      },
+      githubStats,
+      cycleSummary,
+      projectSummaries,
+      totalIssues: completedIssues.length,
+      generatedAt: new Date().toISOString()
+    }
+
+    console.log(`✅ Newsletter generated successfully`)
+    res.json(newsletterData)
+
+  } catch (error: any) {
+    console.error('❌ Failed to generate newsletter:', error)
+    res.status(500).json({
+      success: false,
+      error: 'Failed to generate newsletter',
+      message: error instanceof Error ? error.message : 'Unknown error'
+    })
+  }
+})
 
 app.listen(port, () => {
   console.log(`🚀 Smart Tool of Knowing API server running on port ${port}`)
