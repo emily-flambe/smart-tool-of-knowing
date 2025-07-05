@@ -707,6 +707,12 @@ app.get('/api/health', async (req: any, res: any) => {
 // Test Linear connection specifically
 app.get('/api/test-attachments/:issueId', async (req: any, res: any) => {
   try {
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured'
+      })
+    }
     const { issueId } = req.params
     const result = await linearClient.testSingleIssueAttachments(issueId)
     res.json({ success: true, result })
@@ -1079,11 +1085,12 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
   
   try {
     if (!linearClient) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Linear API key not configured',
         message: 'Run "team setup" to configure your Linear API key'
       })
+      return
     }
 
     // Get the most recently completed cycle
@@ -1092,11 +1099,12 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
       .sort((a, b) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime())
     
     if (completedCycles.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'No completed cycles found',
         message: 'No completed cycles available for newsletter generation'
       })
+      return
     }
 
     const latestCycle = completedCycles[0]

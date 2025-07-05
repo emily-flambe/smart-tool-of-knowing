@@ -31,21 +31,21 @@ class ApiClient {
   }
 
   async getLinearTeams() {
-    return this.request<any[]>('/api/linear/teams');
+    return this.request<any[]>('/api/team-members');
   }
 
   async getLinearUsers() {
-    return this.request<any[]>('/api/linear/users');
+    return this.request<any[]>('/api/active-engineers');
   }
 
   async getLinearCycles() {
-    return this.request<any[]>('/api/linear/cycles');
+    return this.request<any[]>('/api/cycles');
   }
 
   async getLinearIssues(cycleId?: string) {
     const endpoint = cycleId 
-      ? `/api/linear/issues?cycleId=${cycleId}`
-      : '/api/linear/issues';
+      ? `/api/backlog?cycleId=${cycleId}`
+      : '/api/backlog';
     return this.request<any[]>(endpoint);
   }
 
