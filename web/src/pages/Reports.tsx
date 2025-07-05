@@ -6,7 +6,9 @@ import ReportPreview from '../components/ReportPreview';
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorAlert from '../components/ErrorAlert';
 import { generateReport } from '../lib/report-api';
+import { exportToMarkdown, exportToEmail, exportToPDF } from '../lib/export-utils';
 import { ReportData, ReportConfig } from '../types/report';
+import '../styles/print.css';
 
 const Reports: React.FC = () => {
   const [reportConfig, setReportConfig] = useState<ReportConfig>({
@@ -43,10 +45,26 @@ const Reports: React.FC = () => {
   };
 
   const handleExport = (format: 'pdf' | 'markdown' | 'email') => {
-    // TODO: Implement export functionality
-    console.log(`Exporting as ${format}...`);
-    // For now, show a message that export is coming soon
-    alert(`Export to ${format.toUpperCase()} coming soon!`);
+    if (!reportData) return;
+    
+    try {
+      switch (format) {
+        case 'markdown':
+          exportToMarkdown(reportData, reportConfig);
+          break;
+        case 'email':
+          exportToEmail(reportData, reportConfig);
+          break;
+        case 'pdf':
+          exportToPDF(reportData, reportConfig);
+          break;
+        default:
+          console.error(`Unknown export format: ${format}`);
+      }
+    } catch (error) {
+      console.error(`Error exporting to ${format}:`, error);
+      setError(`Failed to export report as ${format}`);
+    }
   };
 
   return (
@@ -64,7 +82,7 @@ const Reports: React.FC = () => {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Configuration Panel */}
-        <div className="lg:col-span-1">
+        <div className="lg:col-span-1 no-print">
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-lg font-medium leading-6 text-gray-900 mb-4">

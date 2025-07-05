@@ -1,0 +1,64 @@
+/* Print styles for report export */
+@media print {
+  /* Hide navigation and controls */
+  nav,
+  .no-print,
+  button {
+    display: none !important;
+  }
+  
+  /* Show only the report preview */
+  .print-only {
+    display: block !important;
+  }
+  
+  /* Reset page margins */
+  @page {
+    margin: 1in;
+  }
+  
+  /* Ensure good typography */
+  body {
+    font-size: 12pt;
+    line-height: 1.5;
+    color: black;
+    background: white;
+  }
+  
+  /* Ensure tables break nicely */
+  table {
+    page-break-inside: avoid;
+  }
+  
+  /* Keep headings with content */
+  h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    page-break-inside: avoid;
+  }
+  
+  /* Remove shadows and borders for print */
+  .shadow,
+  .shadow-sm,
+  .shadow-md,
+  .shadow-lg {
+    box-shadow: none !important;
+  }
+  
+  /* Ensure links are visible */
+  a {
+    color: black;
+    text-decoration: underline;
+  }
+  
+  /* Print-friendly colors */
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-blue-50 {
+    background-color: #f9f9f9 !important;
+  }
+  
+  /* Ensure content spans full width */
+  .max-w-7xl {
+    max-width: 100% !important;
+  }
+}
