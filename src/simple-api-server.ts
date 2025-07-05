@@ -765,6 +765,12 @@ app.get('/api/health', async (req: any, res: any) => {
 app.get('/api/test-attachments/:issueId', async (req: any, res: any) => {
   try {
     const { issueId } = req.params
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured'
+      })
+    }
     const result = await linearClient.testSingleIssueAttachments(issueId)
     res.json({ success: true, result })
   } catch (error: any) {
@@ -1161,7 +1167,7 @@ app.get('/api/active-engineers', async (req: any, res: any) => {
 })
 
 // Newsletter generation endpoint
-app.post('/api/newsletter/generate', async (req: express.Request, res: express.Response) => {
+app.post('/api/newsletter/generate', async (req: any, res: any) => {
   console.log('📰 Newsletter generation request received')
   
   try {
