@@ -19,6 +19,11 @@ const ReportPreview: React.FC<ReportPreviewProps> = ({ data, config }) => {
         <p className="text-sm text-gray-500 mt-1">
           {format(config.dateRange.start, 'MMM d, yyyy')} - {format(config.dateRange.end, 'MMM d, yyyy')}
         </p>
+        {data.generatedAt && (
+          <p className="text-xs text-gray-400 mt-1">
+            Generated on {format(new Date(data.generatedAt), 'MMM d, yyyy h:mm a')}
+          </p>
+        )}
       </div>
 
       {/* Summary Metrics */}

@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Calendar, Download, FileText, RefreshCw } from 'lucide-react';
-import { format, subDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { Download, FileText, RefreshCw } from 'lucide-react';
+import { startOfWeek, endOfWeek } from 'date-fns';
 import ReportConfigurator from '../components/ReportConfigurator';
 import ReportPreview from '../components/ReportPreview';
+import LoadingSpinner from '../components/LoadingSpinner';
+import ErrorAlert from '../components/ErrorAlert';
 import { generateReport } from '../lib/report-api';
 import { ReportData, ReportConfig } from '../types/report';
 
@@ -43,6 +45,8 @@ const Reports: React.FC = () => {
   const handleExport = (format: 'pdf' | 'markdown' | 'email') => {
     // TODO: Implement export functionality
     console.log(`Exporting as ${format}...`);
+    // For now, show a message that export is coming soon
+    alert(`Export to ${format.toUpperCase()} coming soon!`);
   };
 
   return (
@@ -87,6 +91,15 @@ const Reports: React.FC = () => {
                 {reportData && (
                   <div className="flex space-x-2">
                     <button
+                      onClick={handleGenerateReport}
+                      disabled={isLoading}
+                      className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`h-3 w-3 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+                      Refresh
+                    </button>
+                    <div className="border-l border-gray-300 mx-2"></div>
+                    <button
                       onClick={() => handleExport('pdf')}
                       className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                     >
@@ -104,7 +117,7 @@ const Reports: React.FC = () => {
                       onClick={() => handleExport('email')}
                       className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50"
                     >
-                      <Calendar className="h-3 w-3 mr-1" />
+                      <Download className="h-3 w-3 mr-1" />
                       Email
                     </button>
                   </div>
@@ -112,23 +125,17 @@ const Reports: React.FC = () => {
               </div>
               
               {error && (
-                <div className="rounded-md bg-red-50 p-4 mb-4">
-                  <div className="flex">
-                    <div className="ml-3">
-                      <h3 className="text-sm font-medium text-red-800">Error generating report</h3>
-                      <div className="mt-2 text-sm text-red-700">
-                        <p>{error}</p>
-                      </div>
-                    </div>
-                  </div>
+                <div className="mb-4">
+                  <ErrorAlert 
+                    title="Error generating report"
+                    message={error}
+                    onDismiss={() => setError(null)}
+                  />
                 </div>
               )}
 
               {isLoading && (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <RefreshCw className="h-8 w-8 text-gray-400 animate-spin mb-4" />
-                  <p className="text-sm text-gray-500">Generating report...</p>
-                </div>
+                <LoadingSpinner message="Generating report..." />
               )}
 
               {!isLoading && !error && !reportData && (
