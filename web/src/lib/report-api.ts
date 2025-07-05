@@ -5,9 +5,15 @@ const API_BASE_URL = 'http://localhost:3001/api';
 
 export async function generateReport(config: ReportConfig): Promise<ReportData> {
   try {
-    // For now, we'll use the existing newsletter endpoint
-    // In phase 4, we'll extend this to support date ranges and other config options
-    const response = await axios.get(`${API_BASE_URL}/newsletter/generate`);
+    // Build query parameters for date range
+    const params = new URLSearchParams();
+    if (config.dateRange.start && config.dateRange.end) {
+      params.append('startDate', config.dateRange.start.toISOString());
+      params.append('endDate', config.dateRange.end.toISOString());
+    }
+    
+    const url = `${API_BASE_URL}/newsletter/generate${params.toString() ? '?' + params.toString() : ''}`;
+    const response = await axios.get(url);
     
     // Transform the newsletter data to match our ReportData structure
     const newsletterData = response.data;
