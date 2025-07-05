@@ -1,8 +1,5 @@
 import { LinearClient } from '../linear-client.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const execAsync = promisify(exec);
+import { GitHubCLI } from '../utils/github-cli.js';
 
 export interface GitHubPullRequest {
   id: string;
@@ -38,12 +35,12 @@ export interface IssueWithPRs {
 
 export class GitHubIntegrationService {
   private linearClient: LinearClient;
-  private githubToken: string | undefined;
+  private githubCLI: GitHubCLI;
   private githubRepos: string[];
 
   constructor(linearClient: LinearClient) {
     this.linearClient = linearClient;
-    this.githubToken = process.env.GITHUB_TOKEN;
+    this.githubCLI = new GitHubCLI();
     this.githubRepos = process.env.GITHUB_REPOS?.split(',').map(r => r.trim()) || [];
   }
 
@@ -117,54 +114,36 @@ export class GitHubIntegrationService {
   }
 
   private async searchGitHubPRsByPattern(issueIdentifier: string): Promise<GitHubPullRequest[]> {
-    if (!this.githubToken) {
+    if (!this.githubCLI.isConfigured()) {
       console.warn('GITHUB_TOKEN not set, skipping GitHub CLI search');
       return [];
     }
 
-    const searchPatterns = [
-      `"${issueIdentifier}" in:title`,
-      `"${issueIdentifier}" in:body`,
-      `"Fixes ${issueIdentifier}"`,
-      `"Closes ${issueIdentifier}"`,
-      `"Resolves ${issueIdentifier}"`
-    ];
-
+    const prs = await this.githubCLI.searchPRsForIssue(issueIdentifier, this.githubRepos);
     const allPRs: GitHubPullRequest[] = [];
 
-    for (const pattern of searchPatterns) {
-      try {
-        const { stdout } = await execAsync(
-          `gh pr list --state merged --search "${pattern}" --json number,title,url,author,mergedAt,additions,deletions,files --limit 100`,
-          { env: { ...process.env, GH_TOKEN: this.githubToken } }
-        );
-
-        if (stdout.trim()) {
-          const prs = JSON.parse(stdout);
-          for (const pr of prs) {
-            // Extract repo from URL
-            const urlMatch = pr.url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
-            if (urlMatch) {
-              const [, org, repo] = urlMatch;
-              
-              allPRs.push({
-                id: `${org}/${repo}#${pr.number}`,
-                number: pr.number,
-                title: pr.title,
-                url: pr.url,
-                author: pr.author?.login || 'Unknown',
-                mergedAt: pr.mergedAt,
-                additions: pr.additions || 0,
-                deletions: pr.deletions || 0,
-                filesChanged: pr.files?.length || 0,
-                linkedIssues: [issueIdentifier],
-                confidence: this.calculateConfidence(pr, issueIdentifier, pattern)
-              });
-            }
-          }
+    for (const pr of prs) {
+      // Extract repo from URL
+      const urlMatch = pr.url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/);
+      if (urlMatch) {
+        const [, org, repo] = urlMatch;
+        
+        // Check if this repo is in our configured list (if any)
+        if (this.githubRepos.length === 0 || this.githubRepos.includes(`${org}/${repo}`)) {
+          allPRs.push({
+            id: `${org}/${repo}#${pr.number}`,
+            number: pr.number,
+            title: pr.title,
+            url: pr.url,
+            author: pr.author?.login || 'Unknown',
+            mergedAt: pr.mergedAt,
+            additions: pr.additions || 0,
+            deletions: pr.deletions || 0,
+            filesChanged: pr.files?.length || 0,
+            linkedIssues: [issueIdentifier],
+            confidence: this.calculateConfidence(pr, issueIdentifier)
+          });
         }
-      } catch (error) {
-        console.error(`Error searching for PRs with pattern "${pattern}":`, error);
       }
     }
 
@@ -173,17 +152,31 @@ export class GitHubIntegrationService {
     return deduplicatedPRs;
   }
 
-  private calculateConfidence(pr: any, issueIdentifier: string, searchPattern: string): number {
+  private calculateConfidence(pr: any, issueIdentifier: string): number {
     let confidence = 0.5; // Base confidence for CLI search
 
     // Higher confidence if issue ID is in title
-    if (pr.title.includes(issueIdentifier)) {
+    if (pr.title && pr.title.includes(issueIdentifier)) {
       confidence += 0.3;
     }
 
-    // Higher confidence for explicit fix/close/resolve patterns
-    if (searchPattern.includes('Fixes') || searchPattern.includes('Closes') || searchPattern.includes('Resolves')) {
-      confidence += 0.2;
+    // Higher confidence if issue ID is in body with fix/close/resolve patterns
+    if (pr.body) {
+      const body = pr.body.toLowerCase();
+      const issueIdLower = issueIdentifier.toLowerCase();
+      
+      if (body.includes(`fixes ${issueIdLower}`) || 
+          body.includes(`closes ${issueIdLower}`) || 
+          body.includes(`resolves ${issueIdLower}`)) {
+        confidence += 0.2;
+      } else if (body.includes(issueIdLower)) {
+        confidence += 0.1;
+      }
+    }
+
+    // Higher confidence if branch name contains issue ID
+    if (pr.headRefName && pr.headRefName.includes(issueIdentifier)) {
+      confidence += 0.1;
     }
 
     return Math.min(confidence, 0.95); // Cap at 95% for CLI searches
@@ -204,7 +197,7 @@ export class GitHubIntegrationService {
   }
 
   async enrichPRData(prs: GitHubPullRequest[]): Promise<GitHubPullRequest[]> {
-    if (!this.githubToken || prs.length === 0) {
+    if (!this.githubCLI.isConfigured() || prs.length === 0) {
       return prs;
     }
 
@@ -222,18 +215,14 @@ export class GitHubIntegrationService {
         if (repoMatch) {
           const [, org, repo, prNumber] = repoMatch;
           
-          const { stdout } = await execAsync(
-            `gh pr view ${prNumber} --repo ${org}/${repo} --json number,title,url,author,mergedAt,additions,deletions,files`,
-            { env: { ...process.env, GH_TOKEN: this.githubToken } }
-          );
-
-          if (stdout.trim()) {
-            const prData = JSON.parse(stdout);
+          const prDetails = await this.githubCLI.getPRDetails(parseInt(prNumber), `${org}/${repo}`);
+          
+          if (prDetails) {
             enrichedPRs.push({
               ...pr,
-              additions: prData.additions || pr.additions,
-              deletions: prData.deletions || pr.deletions,
-              filesChanged: prData.files?.length || pr.filesChanged
+              additions: prDetails.additions || pr.additions,
+              deletions: prDetails.deletions || pr.deletions,
+              filesChanged: prDetails.files?.length || pr.filesChanged
             });
           } else {
             enrichedPRs.push(pr);
