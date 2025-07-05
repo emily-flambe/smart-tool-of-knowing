@@ -1167,6 +1167,57 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
   }
 })
 
+app.get('/api/cycle-review/:cycleId/github-data', async (req: any, res: any) => {
+  try {
+    if (!linearClient) {
+      return res.status(400).json({
+        error: 'Linear API key not configured',
+        message: 'Run "team setup" to configure your Linear API key'
+      })
+    }
+
+    const { cycleId } = req.params
+    console.log(`🔍 Fetching GitHub data for cycle ${cycleId}...`)
+    
+    // For now, return the GitHub data already included in the issues
+    // In a full implementation, this would use the GitHubIntegrationService
+    // to fetch additional PR details and search for unlinked PRs
+    const completedIssues = await linearClient.getCompletedIssuesInCycle(cycleId)
+    
+    // Collect all PRs from all issues
+    const allPRs: any[] = []
+    for (const issue of completedIssues) {
+      if (issue.linkedPRs && issue.linkedPRs.length > 0) {
+        for (const pr of issue.linkedPRs) {
+          allPRs.push({
+            ...pr,
+            linkedIssues: [issue.identifier],
+            author: pr.creator || 'Unknown',
+            mergedAt: pr.createdAt || null,
+            stats: {
+              additions: pr.additions || 0,
+              deletions: pr.deletions || 0,
+              filesChanged: pr.filesChanged || 0
+            }
+          })
+        }
+      }
+    }
+    
+    console.log(`✅ Found ${allPRs.length} linked PRs across ${completedIssues.length} issues`)
+    
+    res.json({
+      pullRequests: allPRs
+    })
+  } catch (error: any) {
+    console.error('❌ Error fetching GitHub data:', error)
+    res.status(500).json({
+      error: 'Failed to fetch GitHub data',
+      message: error.message
+    })
+  }
+})
+
 // Enhanced AI summary generation based on issue content
 function generateCycleSummary(issues: any[], cycle: any): string {
   const totalIssues = issues.length
