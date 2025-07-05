@@ -5,16 +5,12 @@ interface EnvValues {
   LINEAR_API_KEY?: string;
   OPENAI_API_KEY?: string;
   ANTHROPIC_API_KEY?: string;
-  CODA_API_KEY?: string;
   GITHUB_TOKEN?: string;
   DEFAULT_AI_PROVIDER?: string;
-  DEFAULT_CODA_DOC_ID?: string;
-  DEFAULT_CODA_DOC_NAME?: string;
   DEFAULT_SUMMARY_TYPE?: string;
   OPENAI_MODEL?: string;
   ANTHROPIC_MODEL?: string;
   GITHUB_REPOSITORIES?: string;
-  CODA_DATA_DIRECTORY?: string;
 }
 
 export class EnvManager {
@@ -56,20 +52,11 @@ export class EnvManager {
               case 'ANTHROPIC_API_KEY':
                 values.ANTHROPIC_API_KEY = cleanValue;
                 break;
-              case 'CODA_API_KEY':
-                values.CODA_API_KEY = cleanValue;
-                break;
               case 'GITHUB_TOKEN':
                 values.GITHUB_TOKEN = cleanValue;
                 break;
               case 'DEFAULT_AI_PROVIDER':
                 values.DEFAULT_AI_PROVIDER = cleanValue;
-                break;
-              case 'DEFAULT_CODA_DOC_ID':
-                values.DEFAULT_CODA_DOC_ID = cleanValue;
-                break;
-              case 'DEFAULT_CODA_DOC_NAME':
-                values.DEFAULT_CODA_DOC_NAME = cleanValue;
                 break;
               case 'DEFAULT_SUMMARY_TYPE':
                 values.DEFAULT_SUMMARY_TYPE = cleanValue;
@@ -82,9 +69,6 @@ export class EnvManager {
                 break;
               case 'GITHUB_REPOSITORIES':
                 values.GITHUB_REPOSITORIES = cleanValue;
-                break;
-              case 'CODA_DATA_DIRECTORY':
-                values.CODA_DATA_DIRECTORY = cleanValue;
                 break;
             }
           }
@@ -135,7 +119,6 @@ export class EnvManager {
 # - Linear: https://linear.app/settings/api
 # - OpenAI: https://platform.openai.com/api-keys
 # - Anthropic: https://console.anthropic.com/
-# - Coda: https://coda.io/account
 
 `;
     }
@@ -153,24 +136,12 @@ export class EnvManager {
       content += `ANTHROPIC_API_KEY=${values.ANTHROPIC_API_KEY}\n`;
     }
     
-    if (values.CODA_API_KEY) {
-      content += `CODA_API_KEY=${values.CODA_API_KEY}\n`;
-    }
-    
     if (values.GITHUB_TOKEN) {
       content += `GITHUB_TOKEN=${values.GITHUB_TOKEN}\n`;
     }
     
     if (values.DEFAULT_AI_PROVIDER) {
       content += `DEFAULT_AI_PROVIDER=${values.DEFAULT_AI_PROVIDER}\n`;
-    }
-    
-    if (values.DEFAULT_CODA_DOC_ID) {
-      content += `DEFAULT_CODA_DOC_ID=${values.DEFAULT_CODA_DOC_ID}\n`;
-    }
-    
-    if (values.DEFAULT_CODA_DOC_NAME) {
-      content += `DEFAULT_CODA_DOC_NAME=${values.DEFAULT_CODA_DOC_NAME}\n`;
     }
     
     if (values.DEFAULT_SUMMARY_TYPE) {
@@ -189,9 +160,6 @@ export class EnvManager {
       content += `GITHUB_REPOSITORIES=${values.GITHUB_REPOSITORIES}\n`;
     }
     
-    if (values.CODA_DATA_DIRECTORY) {
-      content += `CODA_DATA_DIRECTORY=${values.CODA_DATA_DIRECTORY}\n`;
-    }
 
     try {
       writeFileSync(this.envPath, content, 'utf8');
@@ -235,7 +203,7 @@ export class EnvManager {
   /**
    * Validate API key format
    */
-  validateApiKey(key: string, type: 'linear' | 'openai' | 'anthropic' | 'coda'): boolean {
+  validateApiKey(key: string, type: 'linear' | 'openai' | 'anthropic'): boolean {
     if (!key || !key.trim()) return false;
     
     switch (type) {
@@ -245,8 +213,6 @@ export class EnvManager {
         return key.startsWith('sk-');
       case 'anthropic':
         return key.startsWith('sk-ant-');
-      case 'coda':
-        return key.length > 10; // Coda keys don't have a specific prefix
       default:
         return false;
     }

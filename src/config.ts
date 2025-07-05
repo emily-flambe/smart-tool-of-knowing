@@ -7,18 +7,12 @@ interface Config {
   linearApiKey?: string;
   openaiApiKey?: string;
   anthropicApiKey?: string;
-  codaApiKey?: string;
   githubToken?: string;
   defaultAiProvider?: 'openai' | 'anthropic';
   defaultSummaryType?: 'brief' | 'detailed' | 'action-items';
   openaiModel?: string;
   anthropicModel?: string;
-  defaultCodaDocId?: string;
-  defaultCodaDocName?: string;
   githubRepositories?: string[];
-  coda?: {
-    dataDirectory?: string;
-  };
   linear?: {
     apiToken?: string;
   };
@@ -40,18 +34,12 @@ class ConfigManager {
       linearApiKey: this.getLinearApiKey(),
       openaiApiKey: this.getOpenAIApiKey(),
       anthropicApiKey: this.getAnthropicApiKey(),
-      codaApiKey: this.getCodaApiKey(),
       githubToken: this.getGitHubToken(),
       defaultAiProvider: this.getDefaultAiProvider(),
       defaultSummaryType: this.getDefaultSummaryType(),
       openaiModel: this.getOpenAIModel(),
       anthropicModel: this.getAnthropicModel(),
-      defaultCodaDocId: this.getDefaultCodaDocId(),
-      defaultCodaDocName: this.getDefaultCodaDocName(),
       githubRepositories: this.getGitHubRepositories(),
-      coda: {
-        dataDirectory: this.getCodaDataDirectory()
-      },
       linear: {
         apiToken: this.getLinearApiKey()
       },
@@ -90,32 +78,6 @@ class ConfigManager {
     this.envManager.updateEnvFile({ ANTHROPIC_API_KEY: apiKey });
   }
 
-  getCodaApiKey(): string | undefined {
-    const envValues = this.envManager.readEnvFile();
-    return envValues.CODA_API_KEY || process.env.CODA_API_KEY;
-  }
-
-  setCodaApiKey(apiKey: string): void {
-    this.envManager.updateEnvFile({ CODA_API_KEY: apiKey });
-  }
-
-  getDefaultCodaDocId(): string | undefined {
-    const envValues = this.envManager.readEnvFile();
-    return envValues.DEFAULT_CODA_DOC_ID || process.env.DEFAULT_CODA_DOC_ID;
-  }
-
-  setDefaultCodaDocId(docId: string): void {
-    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_ID: docId });
-  }
-
-  getDefaultCodaDocName(): string | undefined {
-    const envValues = this.envManager.readEnvFile();
-    return envValues.DEFAULT_CODA_DOC_NAME || process.env.DEFAULT_CODA_DOC_NAME;
-  }
-
-  setDefaultCodaDocName(docName: string): void {
-    this.envManager.updateEnvFile({ DEFAULT_CODA_DOC_NAME: docName });
-  }
 
   getGitHubToken(): string | undefined {
     const envValues = this.envManager.readEnvFile();
@@ -136,14 +98,6 @@ class ConfigManager {
     this.envManager.updateEnvFile({ GITHUB_REPOSITORIES: repositories.join(',') });
   }
 
-  getCodaDataDirectory(): string {
-    const envValues = this.envManager.readEnvFile();
-    return envValues.CODA_DATA_DIRECTORY || process.env.CODA_DATA_DIRECTORY || './data/coda';
-  }
-
-  setCodaDataDirectory(directory: string): void {
-    this.envManager.updateEnvFile({ CODA_DATA_DIRECTORY: directory });
-  }
 
   getDefaultAiProvider(): 'openai' | 'anthropic' {
     const envValues = this.envManager.readEnvFile();
@@ -219,7 +173,6 @@ class ConfigManager {
       linearApiKey: this.envManager.maskValue(config.linearApiKey),
       openaiApiKey: this.envManager.maskValue(config.openaiApiKey),
       anthropicApiKey: this.envManager.maskValue(config.anthropicApiKey),
-      codaApiKey: this.envManager.maskValue(config.codaApiKey),
       githubToken: this.envManager.maskValue(config.githubToken),
       linear: {
         apiToken: this.envManager.maskValue(config.linear?.apiToken)
