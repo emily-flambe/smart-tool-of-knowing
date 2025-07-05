@@ -2,6 +2,10 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import fetch from 'node-fetch'
+import { exec } from 'child_process'
+import { promisify } from 'util'
+
+const execAsync = promisify(exec)
 
 dotenv.config()
 
@@ -609,6 +613,59 @@ class SimpleLinearClient {
       throw error
     }
   }
+
+  async searchGitHubPRsForIssue(issueIdentifier: string): Promise<any[]> {
+    const githubToken = process.env.GITHUB_TOKEN
+    if (!githubToken) {
+      console.debug('GITHUB_TOKEN not set, skipping GitHub search')
+      return []
+    }
+
+    const searchPatterns = [
+      `"${issueIdentifier}" in:title`,
+      `"${issueIdentifier}" in:body`,
+      `"Fixes ${issueIdentifier}"`,
+      `"Closes ${issueIdentifier}"`
+    ]
+
+    const allPRs: any[] = []
+    const seenPRs = new Set<string>()
+
+    for (const pattern of searchPatterns) {
+      try {
+        const { stdout } = await execAsync(
+          `gh pr list --state merged --search "${pattern}" --json number,title,url,author,mergedAt,additions,deletions,files,body,headRefName --limit 50`,
+          { env: { ...process.env, GH_TOKEN: githubToken } }
+        )
+
+        if (stdout.trim()) {
+          const prs = JSON.parse(stdout)
+          for (const pr of prs) {
+            const prId = pr.url
+            if (!seenPRs.has(prId)) {
+              seenPRs.add(prId)
+              
+              // Calculate confidence
+              let confidence = 0.5
+              if (pr.title && pr.title.includes(issueIdentifier)) confidence += 0.3
+              if (pr.body && pr.body.toLowerCase().includes(`fixes ${issueIdentifier.toLowerCase()}`)) confidence += 0.2
+              if (pr.headRefName && pr.headRefName.includes(issueIdentifier)) confidence += 0.1
+              
+              allPRs.push({
+                ...pr,
+                confidence: Math.min(confidence, 0.95),
+                linkedIssues: [issueIdentifier]
+              })
+            }
+          }
+        }
+      } catch (error) {
+        console.error(`Error searching GitHub for pattern "${pattern}":`, error)
+      }
+    }
+
+    return allPRs.sort((a, b) => b.confidence - a.confidence)
+  }
 }
 
 // Initialize Linear client if API key is available
@@ -1179,32 +1236,70 @@ app.get('/api/cycle-review/:cycleId/github-data', async (req: any, res: any) => 
     const { cycleId } = req.params
     console.log(`🔍 Fetching GitHub data for cycle ${cycleId}...`)
     
-    // For now, return the GitHub data already included in the issues
-    // In a full implementation, this would use the GitHubIntegrationService
-    // to fetch additional PR details and search for unlinked PRs
     const completedIssues = await linearClient.getCompletedIssuesInCycle(cycleId)
     
-    // Collect all PRs from all issues
+    // Collect all PRs - both from attachments and GitHub search
     const allPRs: any[] = []
+    const seenPRUrls = new Set<string>()
+    
     for (const issue of completedIssues) {
+      // First, add PRs from Linear attachments (highest confidence)
       if (issue.linkedPRs && issue.linkedPRs.length > 0) {
         for (const pr of issue.linkedPRs) {
+          if (!seenPRUrls.has(pr.url)) {
+            seenPRUrls.add(pr.url)
+            allPRs.push({
+              ...pr,
+              linkedIssues: [issue.identifier],
+              author: pr.creator || 'Unknown',
+              mergedAt: pr.createdAt || null,
+              confidence: 1.0, // 100% confidence for Linear attachments
+              stats: {
+                additions: pr.additions || 0,
+                deletions: pr.deletions || 0,
+                filesChanged: pr.filesChanged || 0
+              }
+            })
+          }
+        }
+      }
+      
+      // Then search GitHub for additional PRs that might be related
+      const githubPRs = await linearClient.searchGitHubPRsForIssue(issue.identifier)
+      for (const pr of githubPRs) {
+        if (!seenPRUrls.has(pr.url)) {
+          seenPRUrls.add(pr.url)
+          
+          // Extract repo info from URL
+          const repoMatch = pr.url.match(/github\.com\/([^\/]+)\/([^\/]+)\/pull\/(\d+)/)
+          const [, org, repo] = repoMatch || ['', '', '']
+          
           allPRs.push({
-            ...pr,
-            linkedIssues: [issue.identifier],
-            author: pr.creator || 'Unknown',
-            mergedAt: pr.createdAt || null,
+            id: `${org}/${repo}#${pr.number}`,
+            number: pr.number,
+            title: pr.title,
+            url: pr.url,
+            org,
+            repo,
+            linkedIssues: pr.linkedIssues,
+            author: pr.author?.login || 'Unknown',
+            mergedAt: pr.mergedAt,
+            confidence: pr.confidence,
+            creator: pr.author?.login,
             stats: {
               additions: pr.additions || 0,
               deletions: pr.deletions || 0,
-              filesChanged: pr.filesChanged || 0
+              filesChanged: pr.files?.length || 0
             }
           })
         }
       }
     }
     
-    console.log(`✅ Found ${allPRs.length} linked PRs across ${completedIssues.length} issues`)
+    // Sort by confidence (highest first)
+    allPRs.sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+    
+    console.log(`✅ Found ${allPRs.length} PRs (${allPRs.filter(pr => pr.confidence === 1).length} from Linear, ${allPRs.filter(pr => pr.confidence < 1).length} from GitHub search)`)
     
     res.json({
       pullRequests: allPRs
