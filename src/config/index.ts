@@ -2,7 +2,7 @@ import dotenv from 'dotenv';
 import { logger } from '../utils/logger';
 
 export const loadConfiguration = (): void => {
-  const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
+  const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env.dashboard';
   const result = dotenv.config({ path: envFile });
 
   if (result.error) {
