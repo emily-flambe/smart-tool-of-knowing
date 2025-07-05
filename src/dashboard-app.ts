@@ -1,4 +1,4 @@
-import { loadConfiguration } from './config';
+import { loadConfiguration } from './config/index';
 import { startServer } from './server';
 import { DatabaseService } from './services/database.service';
 import { logger } from './utils/logger';

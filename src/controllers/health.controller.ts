@@ -8,7 +8,7 @@ export class HealthController {
     this.databaseService = new DatabaseService();
   }
 
-  checkHealth = async (req: Request, res: Response): Promise<void> => {
+  checkHealth = async (_req: Request, res: Response): Promise<void> => {
     res.json({
       success: true,
       data: {
@@ -19,7 +19,7 @@ export class HealthController {
     });
   };
 
-  checkDetailedHealth = async (req: Request, res: Response): Promise<void> => {
+  checkDetailedHealth = async (_req: Request, res: Response): Promise<void> => {
     const dbHealth = await this.databaseService.checkConnection();
     
     res.json({

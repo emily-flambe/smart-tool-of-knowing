@@ -1,6 +1,6 @@
 import { Pool } from 'pg';
 import { logger } from '../utils/logger';
-import { config } from '../config';
+import { config } from '../config/index';
 
 export class DatabaseService {
   private pool: Pool;

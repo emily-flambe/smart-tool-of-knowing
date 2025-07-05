@@ -1,4 +1,4 @@
-import { LinearIssue, LinearUser, LinearCycle, LinearProject } from './linear.types';
+import { LinearIssue, LinearCycle, LinearProject } from './linear.types';
 import { GitHubPullRequest, GitHubCommit } from './github.types';
 import { TimeRange, TimeView } from './base.types';
 

@@ -6,9 +6,9 @@ dotenv.config({ path: '.env.test' });
 process.env.NODE_ENV = 'test';
 process.env.LOG_LEVEL = 'error';
 
-// Mock external services
-jest.mock('../src/services/linear.service');
-jest.mock('../src/services/github.service');
+// Mock external services (will be added in later phases)
+// jest.mock('../src/services/linear.service');
+// jest.mock('../src/services/github.service');
 
 // Increase test timeout for integration tests
 jest.setTimeout(30000);

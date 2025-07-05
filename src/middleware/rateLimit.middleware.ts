@@ -7,7 +7,7 @@ export const rateLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later.',
   standardHeaders: true,
   legacyHeaders: false,
-  handler: (req: Request, res: Response) => {
+  handler: (_req: Request, res: Response) => {
     res.status(429).json({
       success: false,
       error: {
