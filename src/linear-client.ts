@@ -564,4 +564,64 @@ export class LinearClient {
       throw new Error(`Failed to update issue assignee: ${error.message}`);
     }
   }
+
+  async getIssueAttachments(issueId: string): Promise<any[]> {
+    const query = `
+      query($issueId: String!) {
+        issue(id: $issueId) {
+          attachments {
+            nodes {
+              id
+              title
+              url
+              createdAt
+              creator {
+                id
+                name
+              }
+              metadata
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await this.query(query, { issueId });
+    return data.issue?.attachments?.nodes || [];
+  }
+
+  async getIssuesWithAttachments(issueIds: string[]): Promise<Map<string, any[]>> {
+    const query = `
+      query($issueIds: [String!]!) {
+        issues(filter: { id: { in: $issueIds } }) {
+          nodes {
+            id
+            identifier
+            attachments {
+              nodes {
+                id
+                title
+                url
+                createdAt
+                creator {
+                  id
+                  name
+                }
+                metadata
+              }
+            }
+          }
+        }
+      }
+    `;
+
+    const data = await this.query(query, { issueIds });
+    const attachmentMap = new Map<string, any[]>();
+    
+    for (const issue of data.issues?.nodes || []) {
+      attachmentMap.set(issue.id, issue.attachments?.nodes || []);
+    }
+    
+    return attachmentMap;
+  }
 }
