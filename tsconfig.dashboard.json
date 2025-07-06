@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "commonjs",
     "lib": ["ES2022"],
     "outDir": "./dist",
     "rootDir": "./src",
@@ -22,6 +22,18 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true
   },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts", "src/__tests__/**/*", "src/simple-api-server-original.ts"]
+  "include": [
+    "src/types/**/*",
+    "src/config/**/*",
+    "src/controllers/**/*",
+    "src/middleware/**/*",
+    "src/routes/**/*",
+    "src/services/**/*",
+    "src/utils/**/*",
+    "src/database/**/*",
+    "src/models/**/*",
+    "src/server.ts",
+    "src/dashboard-app.ts"
+  ],
+  "exclude": ["node_modules", "dist", "tests", "src/__tests__", "src/**/*.test.ts"]
 }

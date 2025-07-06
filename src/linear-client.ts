@@ -30,6 +30,10 @@ export class LinearClient {
       }),
     });
 
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
     const data = await response.json() as any;
     
     if (data.errors) {

@@ -64,14 +64,14 @@ describe('LinearClient Integration Tests', () => {
         })
       })
 
-      await expect(client.validateApiKey()).rejects.toThrow('Invalid API key')
+      await expect(client.validateApiKey()).rejects.toThrow('Invalid Linear API key')
     })
 
     it('should handle network errors', async () => {
       const mockFetch = require('node-fetch')
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      await expect(client.validateApiKey()).rejects.toThrow('Network error')
+      await expect(client.validateApiKey()).rejects.toThrow('Invalid Linear API key')
     })
   })
 
@@ -367,7 +367,8 @@ describe('LinearClient Integration Tests', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        statusText: 'Unauthorized'
+        statusText: 'Unauthorized',
+        json: async () => ({ errors: [] })
       })
 
       await expect(client.getCurrentCycles())
@@ -392,7 +393,8 @@ describe('LinearClient Integration Tests', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 429,
-        statusText: 'Too Many Requests'
+        statusText: 'Too Many Requests',
+        json: async () => ({ errors: [] })
       })
 
       await expect(client.getCurrentCycles())

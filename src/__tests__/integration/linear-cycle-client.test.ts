@@ -11,8 +11,8 @@ describe('Linear Client Cycle Integration Tests', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     process.env.LINEAR_API_KEY = 'test-api-key'
-    linearClient = new LinearClient()
-    simpleLinearClient = new SimpleLinearClient()
+    linearClient = new LinearClient('test-api-key')
+    simpleLinearClient = new SimpleLinearClient('test-api-key')
   })
 
   afterAll(() => {

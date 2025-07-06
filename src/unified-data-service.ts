@@ -6,16 +6,16 @@ import {
   DataExtractor,
   SyncResult,
   DataSource,
-  ContentType,
+  // ContentType,
   Newsletter,
   NewsletterOptions,
   NewsletterSection,
-  PlanningContext,
-  PlanningReport,
-  PlanningRecommendation
+  // PlanningContext,
+  // PlanningReport,
+  // PlanningRecommendation
 } from './unified-types.js';
 import { existsSync, mkdirSync } from 'fs';
-import { join, dirname } from 'path';
+import { dirname } from 'path';
 
 export class UnifiedDataService {
   private db: Database.Database;
@@ -298,7 +298,7 @@ export class UnifiedDataService {
   async syncAllSources(): Promise<SyncResult[]> {
     const results: SyncResult[] = [] // Will collect sync results from all sources;
 
-    for (const [source, extractor] of this.extractors) {
+    for (const [source, _extractor] of this.extractors) {
       results.push(await this.syncSource(source));
     }
 

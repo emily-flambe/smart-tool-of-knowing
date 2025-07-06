@@ -2,9 +2,9 @@ import { Command } from 'commander';
 import inquirer from 'inquirer';
 import chalk from 'chalk';
 import ora from 'ora';
-import { configManager } from '../config.js';
+// import { configManager } from '../config.js';
 import { LinearClient } from '../linear-client.js';
-import { AIService } from '../ai-service.js';
+// import { AIService } from '../ai-service.js';
 import { EnvManager } from '../env-manager.js';
 
 export function createSetupCommand(): Command {
@@ -45,14 +45,14 @@ export function createSetupCommand(): Command {
       ]);
 
       // Validate Linear API key
-      let linearValidated = false;
+      // let linearValidated = false;
       try {
         const spinner = ora('Validating Linear API key...').start();
         const linearClient = new LinearClient(linearApiKey);
         const viewer = await linearClient.validateApiKey();
         spinner.stop();
         console.log(chalk.green(`✓ Linear API key validated for ${viewer.name} (${viewer.email})`));
-        linearValidated = true;
+        // linearValidated = true;
       } catch (error) {
         console.log(chalk.red('✗ Invalid Linear API key - continuing with setup'));
         console.log(chalk.yellow('You can fix this later by running setup again or using team config set'));

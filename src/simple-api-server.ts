@@ -117,7 +117,7 @@ class SimpleLinearClient {
 
   async getCompletedCycles(monthsBack: number = 6): Promise<any[]> {
     const cycles = await this.getRecentCycles(monthsBack)
-    const currentDate = new Date()
+    // const currentDate = new Date()
     
     // Filter to only completed cycles and sort by completion date (most recent first)
     return cycles
@@ -639,7 +639,7 @@ app.use(cors())
 app.use(express.json())
 
 // Root API endpoint
-app.get('/api/', (req: any, res: any) => {
+app.get('/api/', (_req: any, res: any) => {
   res.json({
     message: '🚀 Smart Tool of Knowing API Server is running!',
     status: 'online',
@@ -661,7 +661,7 @@ app.get('/api/', (req: any, res: any) => {
 })
 
 // Health check endpoint
-app.get('/api/health', async (req: any, res: any) => {
+app.get('/api/health', async (_req: any, res: any) => {
   try {
     // Basic API server health
     const health: HealthResponse = {
@@ -708,14 +708,14 @@ app.get('/api/health', async (req: any, res: any) => {
 app.get('/api/test-attachments/:issueId', async (req: any, res: any) => {
   try {
     const { issueId } = req.params
-    const result = await linearClient.testSingleIssueAttachments(issueId)
+    const result = await linearClient!.testSingleIssueAttachments(issueId)
     res.json({ success: true, result })
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message })
   }
 })
 
-app.get('/api/test-linear', async (req: any, res: any) => {
+app.get('/api/test-linear', async (_req: any, res: any) => {
   try {
     if (!linearClient) {
       return res.status(400).json({
@@ -755,7 +755,7 @@ app.get('/api/test-linear', async (req: any, res: any) => {
 })
 
 // Mock API endpoints for now - will integrate with Linear later
-app.get('/api/cycles', (req: any, res: any) => {
+app.get('/api/cycles', (_req: any, res: any) => {
   res.json([
     {
       id: '1',
@@ -768,7 +768,7 @@ app.get('/api/cycles', (req: any, res: any) => {
   ])
 })
 
-app.get('/api/completed-cycles', async (req: any, res: any) => {
+app.get('/api/completed-cycles', async (_req: any, res: any) => {
   try {
     if (!linearClient) {
       return res.status(400).json({
@@ -801,7 +801,7 @@ app.get('/api/completed-cycles', async (req: any, res: any) => {
   }
 })
 
-app.get('/api/reviewable-cycles', async (req: any, res: any) => {
+app.get('/api/reviewable-cycles', async (_req: any, res: any) => {
   try {
     if (!linearClient) {
       return res.status(400).json({
@@ -1000,7 +1000,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
   }
 })
 
-app.get('/api/backlog', async (req: any, res: any) => {
+app.get('/api/backlog', async (_req: any, res: any) => {
   try {
     if (!linearClient) {
       return res.status(400).json({
@@ -1033,7 +1033,7 @@ app.get('/api/backlog', async (req: any, res: any) => {
   }
 })
 
-app.get('/api/team-members', (req: any, res: any) => {
+app.get('/api/team-members', (_req: any, res: any) => {
   res.json([
     { id: '1', name: 'Alice Johnson', email: 'alice@example.com' },
     { id: '2', name: 'Bob Chen', email: 'bob@example.com' },
@@ -1042,7 +1042,7 @@ app.get('/api/team-members', (req: any, res: any) => {
 })
 
 // Get active engineers from recent cycles
-app.get('/api/active-engineers', async (req: any, res: any) => {
+app.get('/api/active-engineers', async (_req: any, res: any) => {
   console.log('🚀 Active engineers endpoint called')
   try {
     if (!linearClient) {
@@ -1074,7 +1074,7 @@ app.get('/api/active-engineers', async (req: any, res: any) => {
 })
 
 // Newsletter generation endpoint
-app.post('/api/newsletter/generate', async (req: express.Request, res: express.Response) => {
+app.post('/api/newsletter/generate', async (_req: any, res: any) => {
   console.log('📰 Newsletter generation request received')
   
   try {
@@ -1168,7 +1168,7 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
 })
 
 // Enhanced AI summary generation based on issue content
-function generateCycleSummary(issues: any[], cycle: any): string {
+function generateCycleSummary(issues: any[], _cycle: any): string {
   const totalIssues = issues.length
   const totalPoints = issues.reduce((sum, issue) => sum + (issue.estimate || 0), 0)
   
@@ -1375,4 +1375,4 @@ app.listen(port, () => {
   console.log(`📡 API endpoints available at http://localhost:${port}/api/*`)
 })
 
-export { app }
+export { app, SimpleLinearClient }

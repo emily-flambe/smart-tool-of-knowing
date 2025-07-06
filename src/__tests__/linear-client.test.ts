@@ -26,6 +26,7 @@ describe('LinearClient', () => {
   describe('query method', () => {
     it('should make POST request with correct headers for regular API key', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { test: 'data' } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -51,6 +52,7 @@ describe('LinearClient', () => {
     it('should use Bearer token for OAuth keys', async () => {
       const oauthClient = new LinearClient(mockOAuthKey);
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { test: 'data' } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -72,6 +74,7 @@ describe('LinearClient', () => {
 
     it('should throw error when API returns errors', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({
           errors: [
             { message: 'Authentication failed' },
@@ -89,6 +92,7 @@ describe('LinearClient', () => {
     it('should return data when successful', async () => {
       const expectedData = { viewer: { id: '123', name: 'Test User' } };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: expectedData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -107,6 +111,7 @@ describe('LinearClient', () => {
         email: 'test@example.com'
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { viewer: mockViewer } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -124,6 +129,7 @@ describe('LinearClient', () => {
 
     it('should throw error when API key is invalid', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({
           errors: [{ message: 'Authentication failed' }]
         })
@@ -167,6 +173,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockCyclesData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -234,6 +241,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockCyclesData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -259,6 +267,7 @@ describe('LinearClient', () => {
 
     it('should use default 3 months when no parameter provided', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { cycles: { nodes: [] } } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -299,6 +308,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockIssuesData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -316,6 +326,7 @@ describe('LinearClient', () => {
 
     it('should return empty array when cycle has no issues', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { cycle: { issues: { nodes: [] } } } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -327,6 +338,7 @@ describe('LinearClient', () => {
 
     it('should return empty array when cycle is not found', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { cycle: null } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -362,6 +374,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockIssuesData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -398,6 +411,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockProjectsData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -421,6 +435,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockTeamsData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -457,6 +472,7 @@ describe('LinearClient', () => {
         }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: mockIssuesData })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -473,6 +489,7 @@ describe('LinearClient', () => {
 
     it('should respect custom limit parameter', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { team: { issues: { nodes: [] } } } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -488,6 +505,7 @@ describe('LinearClient', () => {
 
     it('should return empty array when team has no issues', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { team: { issues: { nodes: [] } } } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -515,6 +533,7 @@ describe('LinearClient', () => {
         project: { id: 'project1', name: 'Test Project' }
       };
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { issue: mockIssue } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -531,6 +550,7 @@ describe('LinearClient', () => {
 
     it('should return null when issue is not found', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({ data: { issue: null } })
       };
       mockFetch.mockResolvedValue(mockResponse);
@@ -542,6 +562,7 @@ describe('LinearClient', () => {
 
     it('should return null when API throws error', async () => {
       const mockResponse = {
+        ok: true,
         json: jest.fn().mockResolvedValue({
           errors: [{ message: 'Issue not found' }]
         })

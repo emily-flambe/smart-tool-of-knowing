@@ -55,7 +55,7 @@ export class LinearExtractor implements DataExtractor {
     }
   }
 
-  async incrementalSync(lastSyncTime: string): Promise<UnifiedContent[]> {
+  async incrementalSync(_lastSyncTime: string): Promise<UnifiedContent[]> {
     // For now, we'll do a full sync since Linear doesn't provide easy incremental sync
     // In a production version, we'd use Linear's webhook system or filter by updatedAt
     return this.extract();
