@@ -13,6 +13,7 @@
     "dev": "node --loader ts-node/esm src/index.ts",
     "api-server": "node dist/simple-api-server.js",
     "test": "jest",
+    "test:ci": "jest --testPathIgnorePatterns=src/__tests__/integration/",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit"
   },
