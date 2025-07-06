@@ -88,6 +88,7 @@ describe('LinearExtractor', () => {
         identifier: 'ENG-123',
         title: 'Fix login bug',
         description: 'Users cannot log in with OAuth',
+        url: 'https://linear.app/test/issue/ENG-123',
         state: { name: 'In Progress', type: 'started' },
         assignee: { name: 'John Doe', email: 'john@example.com' },
         priority: 1,
@@ -95,7 +96,7 @@ describe('LinearExtractor', () => {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-02T00:00:00Z',
         labels: [{ id: 'label1', name: 'bug', color: '#ff0000' }],
-        project: { id: 'project1', name: 'Authentication System' }
+        project: { id: 'project1', name: 'Authentication System', color: '#0066CC' }
       }
     ];
 
@@ -175,6 +176,7 @@ describe('LinearExtractor', () => {
         identifier: 'TEST-456',
         title: 'Test Issue',
         description: 'This is a test issue for unit testing',
+        url: 'https://linear.app/test/issue/TEST-456',
         state: { name: 'Todo', type: 'unstarted' },
         assignee: { name: 'Jane Smith', email: 'jane@test.com' },
         priority: 2,
@@ -185,7 +187,7 @@ describe('LinearExtractor', () => {
           { id: 'label1', name: 'feature', color: '#00ff00' },
           { id: 'label2', name: 'high-priority', color: '#ff0000' }
         ],
-        project: { id: 'project1', name: 'Test Project' }
+        project: { id: 'project1', name: 'Test Project', color: '#00CC66' }
       };
 
       const result = extractor['issueToUnifiedContent'](mockIssue);
@@ -222,6 +224,7 @@ describe('LinearExtractor', () => {
         id: 'issue2',
         identifier: 'MIN-001',
         title: 'Minimal Issue',
+        url: 'https://linear.app/test/issue/MIN-001',
         state: { name: 'Backlog', type: 'unstarted' },
         priority: 0,
         createdAt: '2024-01-01T00:00:00Z',
@@ -354,13 +357,14 @@ describe('LinearExtractor', () => {
         identifier: 'SEARCH-123',
         title: 'Test UPPERCASE Title',
         description: 'Test Description with MIXED Case',
+        url: 'https://linear.app/test/issue/SEARCH-123',
         state: { name: 'In Progress', type: 'started' },
         assignee: { name: 'John DOE', email: 'john@example.com' },
         priority: 1,
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
         labels: [{ id: 'label1', name: 'URGENT', color: '#ff0000' }],
-        project: { id: 'project1', name: 'Important PROJECT' }
+        project: { id: 'project1', name: 'Important PROJECT', color: '#CC0066' }
       };
 
       const result = extractor['issueToUnifiedContent'](mockIssue);
@@ -375,6 +379,7 @@ describe('LinearExtractor', () => {
         id: 'issue1',
         identifier: 'MIN-001',
         title: 'Basic Title',
+        url: 'https://linear.app/test/issue/MIN-001',
         state: { name: 'Todo', type: 'unstarted' },
         priority: 0,
         createdAt: '2024-01-01T00:00:00Z',
