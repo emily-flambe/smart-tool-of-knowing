@@ -3,8 +3,7 @@
 import { Command } from 'commander';
 import chalk from 'chalk';
 import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
 import { createConfigCommand } from './commands/config.js';
 import { createListCommand } from './commands/list.js';
 import { createSummarizeCommand } from './commands/summarize.js';
@@ -13,8 +12,7 @@ import { createPlanningCommand } from './commands/planning.js';
 import { createUnifiedCommand } from './commands/unified.js';
 import { configManager } from './config.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __dirname: string = process.cwd();
 
 let packageInfo: any;
 try {

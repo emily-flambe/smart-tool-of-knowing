@@ -1,7 +1,7 @@
 import { LinearExtractor } from '../extractors/linear-extractor';
 import { LinearClient } from '../linear-client';
 import { LinearIssue, LinearCycle, LinearProject, LinearTeam, LinearViewer } from '../types';
-import { UnifiedContent, LinearContent } from '../unified-types';
+// import { UnifiedContent, LinearContent } from '../unified-types';
 
 // Mock the LinearClient
 jest.mock('../linear-client');
@@ -95,7 +95,7 @@ describe('LinearExtractor', () => {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-02T00:00:00Z',
         labels: [{ id: 'label1', name: 'bug', color: '#ff0000' }],
-        project: { id: 'project1', name: 'Authentication System' }
+        project: { id: 'project1', name: 'Authentication System', color: '#blue' }
       }
     ];
 
@@ -185,7 +185,7 @@ describe('LinearExtractor', () => {
           { id: 'label1', name: 'feature', color: '#00ff00' },
           { id: 'label2', name: 'high-priority', color: '#ff0000' }
         ],
-        project: { id: 'project1', name: 'Test Project' }
+        project: { id: 'project1', name: 'Test Project', color: '#blue' }
       };
 
       const result = extractor['issueToUnifiedContent'](mockIssue);
@@ -360,7 +360,7 @@ describe('LinearExtractor', () => {
         createdAt: '2024-01-01T00:00:00Z',
         updatedAt: '2024-01-01T00:00:00Z',
         labels: [{ id: 'label1', name: 'URGENT', color: '#ff0000' }],
-        project: { id: 'project1', name: 'Important PROJECT' }
+        project: { id: 'project1', name: 'Important PROJECT', color: '#blue' }
       };
 
       const result = extractor['issueToUnifiedContent'](mockIssue);

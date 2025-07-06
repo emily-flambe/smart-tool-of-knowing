@@ -5,7 +5,7 @@ import ora from 'ora';
 import inquirer from 'inquirer';
 import { LinearClient } from '../linear-client.js';
 import { configManager } from '../config.js';
-import { LinearIssue, LinearCycle } from '../types.js';
+import { LinearIssue } from '../types.js';
 
 export function createListCommand(): Command {
   const command = new Command('list');

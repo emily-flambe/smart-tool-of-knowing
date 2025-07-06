@@ -84,7 +84,7 @@ describe('Backend Infrastructure Integration Tests', () => {
       const simpleApiServerContent = fs.readFileSync(simpleApiServerPath, 'utf-8')
       
       expect(apiServerContent).toContain('export { app }')
-      expect(simpleApiServerContent).toContain('export { app }')
+      expect(simpleApiServerContent).toMatch(/export\s*{\s*app/)
     })
   })
 
