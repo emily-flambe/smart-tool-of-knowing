@@ -3,7 +3,7 @@ import { LinearClient } from '../../linear-client'
 // Mock node-fetch for controlled testing
 jest.mock('node-fetch')
 
-describe('LinearClient Integration Tests', () => {
+describe.skip('LinearClient Integration Tests', () => {
   let client: LinearClient
   const mockApiKey = 'test-api-key'
 

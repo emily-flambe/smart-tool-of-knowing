@@ -239,7 +239,7 @@ export class GitHubExtractor implements DataExtractor {
     });
   }
 
-  private async getRecentPullRequests(owner: string, repo: string): Promise<GitHubPullRequest[]> {
+  async getRecentPullRequests(owner: string, repo: string): Promise<GitHubPullRequest[]> {
     return await this.apiCall<GitHubPullRequest[]>(`/repos/${owner}/${repo}/pulls`, {
       state: 'all',
       sort: 'updated',
