@@ -5,7 +5,7 @@ import inquirer from 'inquirer';
 import { LinearClient } from '../linear-client.js';
 import { AIService } from '../ai-service.js';
 import { configManager } from '../config.js';
-import { LinearIssue, SummaryOptions } from '../types.js';
+import { SummaryOptions } from '../types.js';
 
 export function createSummarizeCommand(): Command {
   const command = new Command('summarize');

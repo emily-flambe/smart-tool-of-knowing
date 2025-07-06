@@ -27,7 +27,7 @@ function createCyclesCommand(): Command {
   return new Command('cycles')
     .description('List current cycles')
     .option('--team <teamId>', 'Filter by team ID')
-    .action(async (options) => {
+    .action(async (_options) => {
       const config = configManager.getConfig();
       if (!config.linearApiKey) {
         console.log(chalk.red('❌ Linear API key not configured. Run `team config setup` first.'));
