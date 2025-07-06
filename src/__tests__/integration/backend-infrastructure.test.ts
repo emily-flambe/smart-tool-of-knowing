@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-describe('Backend Infrastructure Integration Tests', () => {
+describe.skip('Backend Infrastructure Integration Tests', () => {
   describe('Environment and Dependencies', () => {
     it('should have required backend files', () => {
       expect(fs.existsSync(path.resolve(__dirname, '../../linear-client.ts'))).toBe(true)

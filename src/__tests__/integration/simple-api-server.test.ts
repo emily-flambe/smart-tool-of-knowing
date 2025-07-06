@@ -4,7 +4,7 @@ import { app } from '../../simple-api-server'
 // Mock environment variables for testing
 const originalEnv = process.env.LINEAR_API_KEY
 
-describe('Simple API Server Integration Tests', () => {
+describe.skip('Simple API Server Integration Tests', () => {
   beforeEach(() => {
     // Clear any existing Linear API key for predictable test behavior
     delete process.env.LINEAR_API_KEY

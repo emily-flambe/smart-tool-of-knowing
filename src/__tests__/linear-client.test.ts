@@ -1,6 +1,9 @@
 import { LinearClient } from '../linear-client';
 import { LinearViewer } from '../types';
 
+// Mock node-fetch for controlled testing
+jest.mock('node-fetch');
+
 const mockFetch = require('node-fetch') as jest.MockedFunction<any>;
 
 describe('LinearClient', () => {

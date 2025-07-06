@@ -185,6 +185,7 @@ class SimpleLinearClient {
         cycle(id: $cycleId) {
           id
           name
+          number
           startsAt
           endsAt
           issues {
@@ -313,6 +314,7 @@ class SimpleLinearClient {
         cycle: {
           id: cycle.id,
           name: cycle.name,
+          number: cycle.number,
           startsAt: cycle.startsAt,
           endsAt: cycle.endsAt
         }
@@ -707,6 +709,12 @@ app.get('/api/health', async (req: any, res: any) => {
 // Test Linear connection specifically
 app.get('/api/test-attachments/:issueId', async (req: any, res: any) => {
   try {
+    if (!linearClient) {
+      return res.status(400).json({
+        success: false,
+        error: 'Linear API key not configured'
+      })
+    }
     const { issueId } = req.params
     const result = await linearClient.testSingleIssueAttachments(issueId)
     res.json({ success: true, result })
@@ -881,7 +889,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
           uniqueContributors: 0, // No contributors found
           velocity: 0 // No velocity data available
         },
-        issues: [],
+        completedIssues: [],
         pullRequests: []
       })
     }
@@ -954,6 +962,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       }
       acc[projectKey].issues.push(issue)
       acc[projectKey].totalPoints += issue.estimate
+      acc[projectKey].issueCount = acc[projectKey].issues.length
       return acc
     }, {})
 
@@ -968,6 +977,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       }
       acc[engineerKey].issues.push(issue)
       acc[engineerKey].totalPoints += issue.estimate
+      acc[engineerKey].issueCount = acc[engineerKey].issues.length
       return acc
     }, {})
 
@@ -975,6 +985,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
       cycle: {
         id: cycleInfo.id,
         name: cycleInfo.name,
+        number: cycleInfo.number,
         startedAt: cycleInfo.startsAt,
         completedAt: cycleInfo.endsAt
       },
@@ -985,7 +996,7 @@ app.get('/api/cycle-review/:cycleId', async (req: any, res: any) => {
         uniqueContributors,
         velocity
       },
-      issues: formattedIssues,
+      completedIssues: formattedIssues,
       issuesByProject,
       issuesByEngineer,
       pullRequests: [] // Will be populated by GitHub integration
@@ -1079,11 +1090,12 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
   
   try {
     if (!linearClient) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         error: 'Linear API key not configured',
         message: 'Run "team setup" to configure your Linear API key'
       })
+      return
     }
 
     // Get the most recently completed cycle
@@ -1092,11 +1104,12 @@ app.post('/api/newsletter/generate', async (req: express.Request, res: express.R
       .sort((a, b) => new Date(b.endsAt).getTime() - new Date(a.endsAt).getTime())
     
     if (completedCycles.length === 0) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         error: 'No completed cycles found',
         message: 'No completed cycles available for newsletter generation'
       })
+      return
     }
 
     const latestCycle = completedCycles[0]
@@ -1370,9 +1383,12 @@ function hasInterestingTitle(title: string): boolean {
          title.includes('API') || title.includes('UI')
 }
 
-app.listen(port, () => {
-  console.log(`🚀 Smart Tool of Knowing API server running on port ${port}`)
-  console.log(`📡 API endpoints available at http://localhost:${port}/api/*`)
-})
+// Only start the server if this file is run directly (not when imported in tests)
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`🚀 Smart Tool of Knowing API server running on port ${port}`)
+    console.log(`📡 API endpoints available at http://localhost:${port}/api/*`)
+  })
+}
 
-export { app }
+export { app, SimpleLinearClient }
