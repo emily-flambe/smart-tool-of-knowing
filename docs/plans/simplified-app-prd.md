@@ -132,7 +132,7 @@ Create a focused web dashboard that automatically shows Engineering Managers wha
 ## Requirements
 
 ### Must Have
-- Real-time sync with Linear and GitHub (< 5 minute delay)
+- Manually triggered sync with Linear and GitHub
 - Automatic correlation of PRs to Linear issues
 - One-click report generation
 - Mobile-friendly interface
@@ -149,16 +149,14 @@ Create a focused web dashboard that automatically shows Engineering Managers wha
 - Individual performance evaluation
 - Time tracking or estimation
 - Code quality analysis
-- Integration with other tools (Jira, Asana)
+- Integration with other tools (Jira, Asana, Coda)
 - Custom workflows or automation
 
 ## Success Criteria
 
 The product succeeds when:
-1. Engineering Managers save 2+ hours per week
-2. Weekly reports are generated in under 10 seconds
-3. Managers can answer "what is X working on?" instantly
-4. Status meetings become more focused on blockers than updates
+1. Engineering Managers can easily write biweekly newsletters and quarterly readouts about the recent work of the team
+2. Managers can answer "what has Engineer X been working on?" easily for check-ins and performance reviews
 
 ## Appendix: Example Mockups
 
